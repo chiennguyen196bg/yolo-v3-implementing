@@ -57,7 +57,7 @@ def yolo_loss(yolo_output, y_true, anchors, num_classes, ignore_thresh=.5):
         object_mask = y_true[l][..., 4:5]  # shape(m, grid_h, grid_w, num_anchors, 1)
         object_mask_bool = tf.cast(object_mask, tf.bool)
         object_mask_concat = tf.concat([object_mask_bool, object_mask_bool], axis=-1)
-        true_class_probs = y_true[l][..., 5]  # shape(m, grid_h, grid_w, num_anchors, num_classes)
+        true_class_probs = y_true[l][..., 5:]  # shape(m, grid_h, grid_w, num_anchors, num_classes)
 
         grid, raw_pred, pred_xy, pred_wh = yolo_head(yolo_output[l], anchors[anchor_mask[l]], num_classes, input_shape,
                                                      calc_loss=True)
@@ -73,9 +73,11 @@ def yolo_loss(yolo_output, y_true, anchors, num_classes, ignore_thresh=.5):
         ignore_mask = tf.TensorArray(tf.float32, size=1, dynamic_size=True)
 
         def loop_body(b, ignore_mask):
-            print(l, b)
-            true_box = tf.boolean_mask(y_true[l][b, ..., 0:4], object_mask_bool[b, ..., 0])  # shape=(t,4)
-            iou = box_iou(pred_box[b], true_box)  # shape=(grid_h, grid_w, num_anchor, num_true_box)
+            _y_true = tf.gather(y_true[l], b)
+            _object_mask_bool = tf.gather(object_mask_bool, b)
+            _pred_box = tf.gather(pred_box, b)
+            true_box = tf.boolean_mask(_y_true[..., 0:4], _object_mask_bool[..., 0])  # shape=(t,4)
+            iou = box_iou(_pred_box, true_box)  # shape=(grid_h, grid_w, num_anchor, num_true_box)
             best_iou = tf.reduce_max(iou, axis=-1)
             ignore_mask = ignore_mask.write(b, tf.cast(best_iou < ignore_thresh, tf.float32))
             return b + 1, ignore_mask

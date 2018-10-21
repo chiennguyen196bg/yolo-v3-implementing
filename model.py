@@ -90,8 +90,8 @@ def _yolo_block(inputs, filters, num_anchors, num_classes):
     inputs = _conv2d_fixed_padding(inputs, filters * 2, 3)
     raw_detection = slim.conv2d(inputs, num_anchors * (5 + num_classes), 1, stride=1, normalizer_fn=None,
                                 activation_fn=None, biases_initializer=tf.zeros_initializer())
-    grid_shape = raw_detection.get_shape().as_list()[1:3]
-    raw_detection = tf.reshape(raw_detection, shape=(-1, grid_shape[0], grid_shape[1], num_anchors, 5 + num_classes))
+    # grid_shape = raw_detection.get_shape().as_list()[1:3]
+    # raw_detection = tf.reshape(raw_detection, shape=(-1, grid_shape[0], grid_shape[1], num_anchors, 5 + num_classes))
     return route, raw_detection
 
 
@@ -223,6 +223,41 @@ def yolo_body(inputs, num_classes, is_training=False, reuse=False):
                 # detections = tf.identity(detections, name='detections')
                 # return detections
                 return raw_detect_1, raw_detect_2, raw_detect_3
+
+
+def yolo_head(raw_detect, anchors, num_classes, input_shape, calc_loss=False):
+    """
+    Convert
+    :param raw_detect: tensor has shape=(batch_size, grid_h, grid_w, num_anchor * (5 + num_classes)
+    :param anchors: array of anchor has shape=(N,2)
+    :param num_classes: integer
+    :param input_shape: integer, hw
+    :param calc_loss: boolean, is calculating loss or not
+    :return:
+        grid, raw_detect, box_xy, box_wh if calculate loss
+        box_xy, box_wh, box_confidence, box_class_probs if not
+    """
+    num_anchors = len(anchors)
+    # Reshape to batch, height, width, num_anchor, box_params
+    anchors_tensor = tf.reshape(tf.constant(anchors, dtype=tf.float32), [1, 1, 1, num_anchors, 2])
+
+    grid_shape = raw_detect.get_shape().as_list()[1:3]  # height, width
+    grid_y = tf.tile(tf.reshape(tf.range(grid_shape[0]), [-1, 1, 1, 1]), [1, grid_shape[1], 1, 1])
+    grid_x = tf.tile(tf.reshape(tf.range(grid_shape[1]), [1, -1, 1, 1]), [grid_shape[0], 1, 1, 1])
+    grid = tf.concat([grid_x, grid_y], axis=-1)  # shape=(grid_h, grid_w, 1, 2)
+    grid = tf.cast(grid, tf.float32)
+
+    raw_detect = tf.reshape(raw_detect, (
+        -1, grid_shape[0], grid_shape[1], num_anchors, 5 + num_classes))  # shape(m, grid_h, grid_w, num_anchors, attrs)
+
+    box_xy = (tf.sigmoid(raw_detect[..., :2]) + grid) / tf.cast(grid_shape[::-1], tf.float32)
+    box_wh = tf.exp(raw_detect[..., 2:4]) * anchors_tensor / tf.cast(input_shape[::-1], tf.float32)
+    box_confidence = tf.sigmoid(raw_detect[..., 4:5])
+    box_class_probs = tf.sigmoid(raw_detect[..., 5:])
+    if calc_loss:
+        return grid, raw_detect, box_xy, box_wh
+    else:
+        return box_xy, box_wh, box_confidence, box_class_probs
 
 # def load_weights(var_list, weights_file):
 #     """

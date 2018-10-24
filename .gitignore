@@ -3,3 +3,4 @@ test.*
 .idea/
 __pycache__/
 **/*test.py
+dataset/*

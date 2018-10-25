@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import tensorflow as tf
 
@@ -104,7 +105,7 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
         intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
         box_area = wh[..., 0] * wh[..., 1]  # shape=(t,1)
         anchor_area = anchors[..., 0] * anchors[..., 1]  # shape=(1, N)
-        iou = intersect_area / (box_area + anchor_area - intersect_area) # shape=(t, N)
+        iou = intersect_area / (box_area + anchor_area - intersect_area)  # shape=(t, N)
 
         # Find best anchor for each true box
         best_anchor = np.argmax(iou, axis=-1)
@@ -127,3 +128,53 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
     return y_true
 
 
+def _parse(serialized_example):
+    features = tf.parse_single_example(
+        serialized_example,
+        features={
+            'image/encoded': tf.FixedLenFeature([], dtype=tf.string),
+            'image/object/bbox/xmin': tf.VarLenFeature(dtype=tf.float32),
+            'image/object/bbox/xmax': tf.VarLenFeature(dtype=tf.float32),
+            'image/object/bbox/ymin': tf.VarLenFeature(dtype=tf.float32),
+            'image/object/bbox/ymax': tf.VarLenFeature(dtype=tf.float32),
+            'image/object/bbox/label': tf.VarLenFeature(dtype=tf.int64)
+        }
+    )
+    image = tf.image.decode_jpeg(features['image/encoded'], channels=3)
+    image = tf.image.convert_image_dtype(image, tf.uint8)
+    xmin = tf.expand_dims(features['image/object/bbox/xmin'].values, axis=0)
+    ymin = tf.expand_dims(features['image/object/bbox/ymin'].values, axis=0)
+    xmax = tf.expand_dims(features['image/object/bbox/xmax'].values, axis=0)
+    ymax = tf.expand_dims(features['image/object/bbox/ymax'].values, axis=0)
+    label = tf.expand_dims(features['image/object/bbox/label'].values, axis=0)
+    label = tf.cast(label, tf.float32)
+    bbox = tf.concat([xmin, ymin, xmax, ymax, label], axis=0)
+    bbox = tf.transpose(bbox, [1, 0])
+
+    return image
+
+
+def build_dataset(filenames, is_training, batch_size=32, buffer_size=2048):
+    dataset = tf.data.TFRecordDataset(filenames=filenames)
+    dataset = dataset.map(_parse, num_parallel_calls=8)
+    if is_training:
+        dataset = dataset.shuffle(buffer_size=buffer_size).repeat(None)
+    else:
+        dataset = dataset.repeat(1)
+    dataset = dataset.batch(batch_size).prefetch(batch_size)
+    return dataset
+
+
+if __name__ == '__main__':
+    DATASET_DIR = "dataset/nfpa/"
+    dataset = build_dataset(os.path.join(os.curdir, DATASET_DIR, 'train.tfrecords'), is_training=True, batch_size=6)
+    iterator = dataset.make_one_shot_iterator()
+    test = iterator.get_next()
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        try:
+            while True:
+                test_ = sess.run([test])
+                print(test_[0].shape)
+        except tf.errors.OutOfRangeError:
+            pass

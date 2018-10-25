@@ -2,56 +2,9 @@ import os
 import numpy as np
 import tensorflow as tf
 import config as cfg
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
-
-# def preprocess_true_boxes(true_boxs, input_shape, grid_shape, anchors, num_classes):
-#     """
-#     set true_boxs in to grid, convinient for calculating loss
-#     :param true_boxs: list of true box has shape=(batch_size, max_objects, 5), x1y1x2y2class_id
-#     :param input_shape: shape of input image: (ih, iw)
-#     :param grip_shape: shape of output grid: (h, w)
-#     :param anchors: anchors, shape=(n, 2)
-#     :param num_classes: number of classes: integer
-#     :return: a grip has shape [batch_size, h, w, (x + y + w + h + true_classes)]
-#     """
-#     assert (true_boxs[..., 4] < num_classes).all()
-#     true_boxs = np.array(true_boxs, dtype="float32")  # shape=(batch_size, max_objects, 5)
-#     input_shape = np.array(input_shape, dtype="int32")
-#     grid_shape = np.array(grid_shape, dtype="int32")
-#
-#     # convert the numbers into scale of input shape
-#     boxes_xy = (true_boxs[..., 0:2] + true_boxs[..., 2:4]) // 2
-#     boxes_wh = true_boxs[..., 2:4] - true_boxs[..., 0:2]
-#     true_boxs[..., 0:2] = boxes_xy / input_shape[::-1]
-#     true_boxs[..., 2:4] = boxes_wh / input_shape[::-1]
-#
-#     batch_size = true_boxs.shape[0]
-#     y_true = np.zeros((batch_size, grid_shape[0], grid_shape[1], len(anchors), 5 + num_classes), dtype='float32')
-#
-#     # Expand dim to apply broadcasting
-#     anchors = np.expand_dims(anchors, 0)  # shape=(1, N, 2)
-#     anchor_maxes = anchors / 2
-#     anchor_mins = -anchor_maxes
-#
-#     valid_mask = boxes_wh[..., 0] > 0  # shape(m, T)
-#
-#     for b in batch_size:
-#         # Discard zero rows
-#         wh = boxes_wh[b, valid_mask[b]]  # shape=(t, 2)
-#         if len(wh) == 0:
-#             continue
-#         # Expand dim to apply broadcasting
-#         wh = np.expand_dims(wh, -2)  # shape=(t, 1, 2)
-#         box_maxes = wh / 2
-#         box_mins = -box_maxes
-#
-#         intersect_mins = np.maximum(box_mins, anchor_mins) # shape(t, N, 2)
-#         intersect_maxes = np.minimum(box_maxes, anchor_maxes) # same shape
-#         intersect_wh = np.maximum(intersect_maxes - intersect_mins, 0.)
-#         interset_area = intersect_wh[..., 0] * intersect_wh[..., 1] # shape=(t, N)
-#
-#
-#     return None
 
 def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
     """
@@ -129,12 +82,39 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
     return y_true
 
 
-def _preprocess(image, bbox):
+def _preprocess(image, bbox, input_shape):
     """resize image to input shape"""
-    pass
+    image_width, image_height = tf.cast(tf.shape(image)[1], tf.float32), tf.cast(tf.shape(image)[0], tf.float32)
+    input_shape = tf.cast(input_shape, tf.float32)
+    input_height, input_width = input_shape[0], input_shape[1]
+    scale = tf.minimum(input_width / image_width, input_height / image_height)
+    new_height = image_height * scale
+    new_width = image_width * scale
+    dy = (input_height - new_height) / 2
+    dx = (input_width - new_width) / 2
+    # image = tf.Print(image, [image[125, 125]])
+    image = tf.image.resize_images(image, [tf.cast(new_height, tf.int32), tf.cast(new_width, tf.int32)],
+                                   method=tf.image.ResizeMethod.BICUBIC)
+    new_image = tf.image.pad_to_bounding_box(image, tf.cast(dy, tf.int32), tf.cast(dx, tf.int32),
+                                             tf.cast(input_height, tf.int32), tf.cast(input_width, tf.int32))
+    image_ones = tf.ones_like(image)
+    image_ones_padded = tf.image.pad_to_bounding_box(image_ones, tf.cast(dy, tf.int32), tf.cast(dx, tf.int32),
+                                                     tf.cast(input_height, tf.int32), tf.cast(input_width, tf.int32))
+    image_color_padded = (1 - image_ones_padded) * 128
+    image = image_color_padded + new_image
+    image = image / 255.
+    image = tf.clip_by_value(image, clip_value_min=0.0, clip_value_max=1.0)
+    # bbox
+    xmin, ymin, xmax, ymax, label = tf.split(value=bbox, num_or_size_splits=5, axis=1)
+    xmin = xmin * new_width + dx
+    xmax = xmax * new_width + dx
+    ymin = ymin * new_height + dy
+    ymax = ymax * new_height + dy
+    bbox = tf.concat([xmin, ymin, xmax, ymax, label], 1)
+    return image, bbox
 
 
-def _parse(serialized_example):
+def _parse(serialized_example, input_shape):
     features = tf.parse_single_example(
         serialized_example,
         features={
@@ -156,14 +136,15 @@ def _parse(serialized_example):
     label = tf.cast(label, tf.float32)
     bbox = tf.concat([xmin, ymin, xmax, ymax, label], axis=0)
     bbox = tf.transpose(bbox, [1, 0])
+    bbox = tf.cond(tf.equal(tf.size(bbox), 0), lambda: tf.constant([[0] * 5], dtype=tf.float32), lambda: bbox)
+    image, bbox = _preprocess(image, bbox, input_shape)
+    return image, bbox[0]
 
-    return tf.image.resize_images(image, (10, 10)), tf.constant(np.random.randint(1, 10, (2, 3)),
-                                                                dtype=tf.int32)
 
-
-def build_dataset(filenames, is_training, batch_size=32, buffer_size=2048):
+def build_dataset(filenames, input_shape=cfg.INPUT_SHAPE, is_training=False, batch_size=32, buffer_size=2048):
+    input_shape = tf.constant(np.array(input_shape))
     dataset = tf.data.TFRecordDataset(filenames=filenames)
-    dataset = dataset.map(_parse, num_parallel_calls=8)
+    dataset = dataset.map(lambda x: _parse(x, input_shape), num_parallel_calls=8)
     if is_training:
         dataset = dataset.shuffle(buffer_size=buffer_size).repeat(None)
     else:
@@ -176,13 +157,20 @@ if __name__ == '__main__':
     DATASET_DIR = "dataset/nfpa/"
     dataset = build_dataset(os.path.join(os.curdir, DATASET_DIR, 'train.tfrecords'), is_training=True, batch_size=6)
     iterator = dataset.make_one_shot_iterator()
-    test, test2 = iterator.get_next()
+    images, bbox = iterator.get_next()
+    fig, ax = plt.subplots(1)
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         try:
             while True:
-                test_, test2_ = sess.run([test, test2])
-                print(test_.shape)
+                images_out, bbox_out = sess.run([images, bbox])
+                print(images_out[0][125][125])
+                ax.imshow(images_out[2])
+                xmin, ymin, xmax, ymax = bbox_out[2][0:4]
+                rect = patches.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, linewidth=1, edgecolor='r',
+                                         facecolor='none')
+                ax.add_patch(rect)
+                plt.show()
                 break
         except tf.errors.OutOfRangeError:
             pass

@@ -1,0 +1,8 @@
+# Batch norm config
+BATCH_NORM_DECAY = 0.9
+BATCH_NORM_EPSILON = 1e-05
+LEAKY_RELU = 0.1
+
+ANCHORS = [(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90), (156, 198), (373, 326)]
+
+INPUT_SHAPE = [416, 416]

@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
+import config as cfg
 
 
 # def preprocess_true_boxes(true_boxs, input_shape, grid_shape, anchors, num_classes):
@@ -128,6 +129,11 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
     return y_true
 
 
+def _preprocess(image, bbox):
+    """resize image to input shape"""
+    pass
+
+
 def _parse(serialized_example):
     features = tf.parse_single_example(
         serialized_example,
@@ -151,7 +157,8 @@ def _parse(serialized_example):
     bbox = tf.concat([xmin, ymin, xmax, ymax, label], axis=0)
     bbox = tf.transpose(bbox, [1, 0])
 
-    return image
+    return tf.image.resize_images(image, (10, 10)), tf.constant(np.random.randint(1, 10, (2, 3)),
+                                                                dtype=tf.int32)
 
 
 def build_dataset(filenames, is_training, batch_size=32, buffer_size=2048):
@@ -169,12 +176,13 @@ if __name__ == '__main__':
     DATASET_DIR = "dataset/nfpa/"
     dataset = build_dataset(os.path.join(os.curdir, DATASET_DIR, 'train.tfrecords'), is_training=True, batch_size=6)
     iterator = dataset.make_one_shot_iterator()
-    test = iterator.get_next()
+    test, test2 = iterator.get_next()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         try:
             while True:
-                test_ = sess.run([test])
-                print(test_[0].shape)
+                test_, test2_ = sess.run([test, test2])
+                print(test_.shape)
+                break
         except tf.errors.OutOfRangeError:
             pass

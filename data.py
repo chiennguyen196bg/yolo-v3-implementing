@@ -141,9 +141,8 @@ class DataReader:
         dataset = tf.data.TFRecordDataset(filenames=filenames)
         dataset = dataset.map(self._parse, num_parallel_calls=8)
         if is_training:
-            dataset = dataset.shuffle(buffer_size=buffer_size).repeat(None)
-        else:
-            dataset = dataset.repeat(1)
+            dataset = dataset.shuffle(buffer_size=buffer_size)
+
         dataset = dataset.batch(batch_size).prefetch(batch_size)
         return dataset
 

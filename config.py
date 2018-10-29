@@ -12,13 +12,15 @@ DATASET_DIR = "dataset/nfpa/"
 
 LOG_DIR = './logs'
 
+CHECKPOINT_DIR = './checkpoint'
+
 MAX_BOXES = 20
 LEARNING_RATE = 0.001
 
 PRE_TRAIN = True
-MODEL_DIR = './test_model/model.ckpt-192192'
+MODEL_DIR = './checkpoint'
 DARKNET53_WEIGHTS_PATH = './model-data/darknet53.weights'
-N_EPOCHS = 50
+N_EPOCHS = 2000
 
 TRAIN_BATCH_SIZE = 8
 TEST_BATCH_SIZE = 8

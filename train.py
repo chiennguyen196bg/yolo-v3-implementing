@@ -108,8 +108,8 @@ def train():
             )
 
             if epoch % 5 == 0:
-                checkpoint_path = os.path.join(cfg.MODEL_DIR, 'model.ckpt')
-                saver.save(sess, checkpoint_path, global_step=global_step)
+                checkpoint_path = os.path.join(cfg.CHECKPOINT_DIR, 'model.ckpt')
+                saver.save(sess, checkpoint_path, global_step=epoch)
 
 
 if __name__ == '__main__':

@@ -40,9 +40,11 @@ def train():
     output = model.yolo_inference(images, is_training)
     loss = model.yolo_loss(output, bbox_true, ignore_thresh=0.5)
     tf.summary.scalar('loss', loss)
-    merged_summary = tf.summary.merge_all()
+    list_vars = list(tf.global_variables())
     global_step = tf.Variable(0, trainable=False)
     lr = tf.train.exponential_decay(cfg.LEARNING_RATE, global_step, decay_steps=1000, decay_rate=0.8)
+    tf.summary.scalar('learning-rate', lr)
+    merged_summary = tf.summary.merge_all()
     optimizer = tf.train.AdamOptimizer(lr)
 
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -53,9 +55,10 @@ def train():
         else:
             train_op = optimizer.minimize(loss=loss, global_step=global_step)
     init_variables = tf.global_variables_initializer()
-    saver = tf.train.Saver()
+    saver = tf.train.Saver(var_list=list_vars)
 
     with tf.Session(config=tf.ConfigProto(log_device_placement=False)) as sess:
+        # sess.run(init_variables)
         # load model if have a checkpoint
         ckpt = tf.train.get_checkpoint_state(cfg.MODEL_DIR)
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):

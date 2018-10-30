@@ -6,62 +6,16 @@ import tensorflow as tf
 slim = tf.contrib.slim
 
 
-def darknet53(inputs):
-    """
-    Builds Darknet-53 model.
-    """
-    inputs = _conv2d_fixed_padding(inputs, 32, 3)
-    inputs = _conv2d_fixed_padding(inputs, 64, 3, stride=2)
-    inputs = _darknet53_block(inputs, 32)
-    inputs = _conv2d_fixed_padding(inputs, 128, 3, stride=2)
-
-    for i in range(2):
-        inputs = _darknet53_block(inputs, 64)
-
-    inputs = _conv2d_fixed_padding(inputs, 256, 3, stride=2)
-
-    for i in range(8):
-        inputs = _darknet53_block(inputs, 128)
-
-    route_1 = inputs
-    inputs = _conv2d_fixed_padding(inputs, 512, 3, stride=2)
-
-    for i in range(8):
-        inputs = _darknet53_block(inputs, 256)
-
-    route_2 = inputs
-    inputs = _conv2d_fixed_padding(inputs, 1024, 3, stride=2)
-
-    for i in range(4):
-        inputs = _darknet53_block(inputs, 512)
-
-    return route_1, route_2, inputs
-
-
-def _conv2d_fixed_padding(inputs, filters, kernel_size, stride=1):
-    if stride > 1:
-        inputs = _fixed_padding(inputs, kernel_size)
-    inputs = slim.conv2d(inputs, filters, kernel_size, stride=stride, padding=('SAME' if stride == 1 else 'VALID'))
-    return inputs
-
-
-def _darknet53_block(inputs, filters):
-    shortcut = inputs
-    inputs = _conv2d_fixed_padding(inputs, filters, 1)
-    inputs = _conv2d_fixed_padding(inputs, filters * 2, 3)
-
-    inputs = inputs + shortcut
-    return inputs
-
-
 @tf.contrib.framework.add_arg_scope
 def _fixed_padding(inputs, kernel_size, *args, mode='CONSTANT', **kwargs):
     """
     Pads the input along the spatial dimensions independently of input size.
     Args:
-      inputs: A tensor of size [batch, channels, height_in, width_in].
+      inputs: A tensor of size [batch, channels, height_in, width_in] or
+        [batch, height_in, width_in, channels] depending on data_format.
       kernel_size: The kernel to be used in the conv2d or max_pool2d operation.
                    Should be a positive integer.
+      data_format: The input format ('NHWC' or 'NCHW').
       mode: The mode for tf.pad.
     Returns:
       A tensor with the same format as the input with the data either intact
@@ -70,10 +24,58 @@ def _fixed_padding(inputs, kernel_size, *args, mode='CONSTANT', **kwargs):
     pad_total = kernel_size - 1
     pad_beg = pad_total // 2
     pad_end = pad_total - pad_beg
-
     padded_inputs = tf.pad(inputs, [[0, 0], [pad_beg, pad_end],
-                                    [pad_beg, pad_end], [0, 0]], mode=mode)
+                                        [pad_beg, pad_end], [0, 0]], mode=mode)
     return padded_inputs
+
+
+def _conv2d_fixed_padding(inputs, filters, kernel_size, strides=1):
+    if strides > 1:
+        inputs = _fixed_padding(inputs, kernel_size)
+    inputs = slim.conv2d(inputs, filters, kernel_size, stride=strides, padding=('SAME' if strides == 1 else 'VALID'))
+    return inputs
+
+
+def _darknet53_block(inputs, filters):
+    shortcut = inputs
+    inputs = _conv2d_fixed_padding(inputs, filters, 1)
+    inputs = _conv2d_fixed_padding(inputs, filters * 2, 3)
+    inputs = inputs + shortcut
+    return inputs
+
+
+def darknet53(inputs):
+    """
+    Builds Darknet-53 model
+    :param inputs:
+    :return:
+    """
+    inputs = _conv2d_fixed_padding(inputs, 32, 3)
+    inputs = _conv2d_fixed_padding(inputs, 64, 3, strides=2)
+    inputs = _darknet53_block(inputs, 32)
+    inputs = _conv2d_fixed_padding(inputs, 128, 3, strides=2)
+
+    for i in range(2):
+        inputs = _darknet53_block(inputs, 64)
+
+    inputs = _conv2d_fixed_padding(inputs, 256, 3, strides=2)
+
+    for i in range(8):
+        inputs = _darknet53_block(inputs, 128)
+
+    route1 = inputs
+    inputs = _conv2d_fixed_padding(inputs, 512, 3, strides=2)
+
+    for i in range(8):
+        inputs = _darknet53_block(inputs, 256)
+
+    route2 = inputs
+    inputs = _conv2d_fixed_padding(inputs, 1024, 3, strides=2)
+
+    for i in range(4):
+        inputs = _darknet53_block(inputs, 512)
+
+    return route1, route2, inputs
 
 
 def _yolo_block(inputs, filters, num_anchors, num_classes):
@@ -404,7 +406,7 @@ class Yolov3:
 
         return loss
 
-    def yolo_eval(self, yolo_outputs, image_shape, max_boxes=20, score_threshold=.6, iou_threshold=.5):
+    def yolo_predict(self, yolo_outputs, image_shape, max_boxes=20, score_threshold=.6, iou_threshold=.5):
         """Evaluate YOLO model on given input and return filtered boxes."""
         num_layers = len(yolo_outputs)
         anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]] if num_layers == 3 else [[3, 4, 5], [1, 2, 3]]
@@ -439,7 +441,6 @@ class Yolov3:
         scores_ = tf.concat(scores_, axis=0)
         classes_ = tf.concat(classes_, axis=0)
         return boxes_, scores_, classes_
-
 
 #
 # def detections_boxes(detections):

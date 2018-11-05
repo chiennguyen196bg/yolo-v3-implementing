@@ -27,16 +27,16 @@ def detect(image_path, class_names, model_path, yolo_weights=None):
             saver = tf.train.Saver()
             saver.restore(sess, model_path)
         out_result_bbox = sess.run(
-            [result_bbox],
+            result_bbox,
             feed_dict={
                 input_image: image_data,
                 input_image_shape: [[image.size[1], image.size[0]]]
             })
-
-        out_result_bbox = out_result_bbox[0][0]
+        print(out_result_bbox)
+        out_result_bbox = out_result_bbox[0]
         out_result_bbox = out_result_bbox[out_result_bbox[:, 4] > 0]
 
-        print('Found {} boxes for {}'.format(len(out_result_bbox[0]), 'img'))
+        print('Found {} boxes for {}'.format(out_result_bbox.shape[0], 'img'))
         font = None
         thickness = (image.size[0] + image.size[1]) // 300
 
@@ -83,5 +83,5 @@ if __name__ == '__main__':
         lines = f.readlines()
         class_names = list(x.strip() for x in lines)
     # print(len(class_names))
-    detect('./800px-People_at_Confluence_Park-2.jpg', class_names, model_path=None, yolo_weights='./model-data/yolov3.weights')
-    # detect('./NFPA-Labels.jpg', ['nfpa'], model_path='./checkpoint/model.ckpt-270', yolo_weights=None)
+    # detect('./800px-People_at_Confluence_Park-2.jpg', class_names, model_path=None, yolo_weights='./model-data/yolov3.weights')
+    detect('./test.png', ['nfpa'], model_path='./checkpoint/model.ckpt-270', yolo_weights=None)

@@ -7,6 +7,7 @@ import time
 import datetime
 from yolov3.model import Yolov3
 from yolov3.util import load_weights
+from metric import cal_AP
 
 
 def train():
@@ -39,8 +40,11 @@ def train():
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, cfg.NUM_CLASSES)
     output = model.yolo_inference(images, is_training)
     loss = model.yolo_loss(output, bbox_true, ignore_thresh=0.5)
+    # l2_loss = tf.losses.get_regularization_loss()
+    # loss += l2_loss
     tf.summary.scalar('loss', loss)
     list_vars = list(tf.global_variables())
+
     global_step = tf.Variable(0, trainable=False)
     lr = tf.train.exponential_decay(cfg.LEARNING_RATE, global_step, decay_steps=1000, decay_rate=0.8)
     tf.summary.scalar('learning-rate', lr)
@@ -56,6 +60,8 @@ def train():
             train_op = optimizer.minimize(loss=loss, global_step=global_step)
     init_variables = tf.global_variables_initializer()
     saver = tf.train.Saver(var_list=list_vars)
+
+    predict_box = model.yolo_predict(output, image_shape=input_shape, max_boxes=cfg.MAX_BOXES, score_threshold=0.3)
 
     with tf.Session(config=tf.ConfigProto(log_device_placement=False)) as sess:
         # sess.run(init_variables)
@@ -97,7 +103,7 @@ def train():
             test_losses = []
             try:
                 while True:
-                    test_loss = sess.run([loss], {is_training: False})
+                    test_loss = sess.run(loss, {is_training: False})
                     test_losses.append(test_loss)
             except tf.errors.OutOfRangeError:
                 pass
@@ -109,6 +115,31 @@ def train():
                 summary=tf.Summary(value=[tf.Summary.Value(tag='loss', simple_value=test_loss)]),
                 global_step=global_step_value
             )
+
+            # Calculate mAP
+            #if epoch % 10 == 0:
+             #   predict_ = []
+              #  grouth_truth_ = []
+               # sess.run(test_init)
+               # try:
+                #    while True:
+                 #       out_predict_box, out_bbox = sess.run([predict_box, bbox], {is_training: False})
+                  #      predict_.append(out_predict_box)
+                   #     grouth_truth_.append(out_bbox)
+                #except tf.errors.OutOfRangeError:
+                #    pass
+                #grouth_truth_ = np.concatenate(grouth_truth_, axis=0)
+                #predict_ = np.concatenate(predict_, axis=0)
+                #AP = cal_AP(predict_, grouth_truth_, cfg.NUM_CLASSES, 0.5)
+                #mAP = np.mean(AP)
+                #test_writer.add_summary(
+                #    summary=tf.Summary(value=[tf.Summary.Value(tag='mAP', simple_value=mAP)]),
+                #    global_step=global_step_value
+                #)
+                #del grouth_truth_
+                #del predict_
+                #del AP
+                #del mAP
 
             if epoch % 5 == 0:
                 checkpoint_path = os.path.join(cfg.CHECKPOINT_DIR, 'model.ckpt')

@@ -1,9 +1,10 @@
 import numpy as np
 import tensorflow as tf
-
+from tensorflow.python.ops import gen_image_ops
 # import config as cf
 
 slim = tf.contrib.slim
+tf.image.non_max_suppression = gen_image_ops.non_max_suppression_v2
 
 
 @tf.contrib.framework.add_arg_scope
@@ -426,23 +427,6 @@ class Yolov3:
         mask = box_scores > score_threshold  # shape=(batch_size, m, num_classes)
         max_boxes_tensor = tf.constant(max_boxes, tf.int32)
 
-        # boxes_ = []
-        # scores_ = []
-        # classes_ = []
-        # for c in range(self.num_classes):
-        #     class_boxes = tf.boolean_mask(boxes, mask[:, c])
-        #     class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
-        #     nms_index = tf.image.non_max_suppression(class_boxes, class_box_scores, max_boxes_tensor, iou_threshold)
-        #     class_boxes = tf.gather(class_boxes, nms_index)
-        #     class_box_scores = tf.gather(class_box_scores, nms_index)
-        #     classes = tf.ones_like(class_box_scores, tf.int32) * c
-        #     boxes_.append(class_boxes)
-        #     scores_.append(class_box_scores)
-        #     classes_.append(classes)
-        # boxes_ = tf.concat(boxes_, axis=0)
-        # scores_ = tf.concat(scores_, axis=0)
-        # classes_ = tf.concat(classes_, axis=0)
-        # return boxes_, scores_, classes_
 
         result_bbox = tf.TensorArray(tf.float32, size=batch_size)
 

@@ -17,7 +17,7 @@ def detect(image_path, class_names, model_path, yolo_weights=None):
     input_image = tf.placeholder(shape=[None, 416, 416, 3], dtype=tf.float32)
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, len(class_names))
     yolo_outputs = model.yolo_inference(input_image, is_training=False)
-    result_bbox = model.yolo_predict(yolo_outputs, input_image_shape)
+    result_bbox = model.yolo_predict(yolo_outputs, input_image_shape, score_threshold=.5)
     with tf.Session() as sess:
         # sess.run(tf.global_variables_initializer())
         if yolo_weights is not None:
@@ -84,4 +84,4 @@ if __name__ == '__main__':
         class_names = list(x.strip() for x in lines)
     # print(len(class_names))
     # detect('./800px-People_at_Confluence_Park-2.jpg', class_names, model_path=None, yolo_weights='./model-data/yolov3.weights')
-    detect('./test.png', ['nfpa'], model_path='./checkpoint/model.ckpt-270', yolo_weights=None)
+    detect('./NFPA-Labels.jpg', ['nfpa'], model_path='./checkpoint/model.ckpt-10', yolo_weights=None)

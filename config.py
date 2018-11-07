@@ -8,7 +8,7 @@ ANCHORS = [(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90
 INPUT_SHAPE = [416, 416]
 NUM_CLASSES = 1
 
-DATASET_DIR = "dataset/nfpa/"
+DATASET_DIR = "dataset/coconut/"
 
 LOG_DIR = './logs'
 

@@ -15,11 +15,14 @@ def train():
     input_shape = np.array(cfg.INPUT_SHAPE, dtype=np.int32)
     grid_shapes = [input_shape // 32, input_shape // 16, input_shape // 8]
 
+    train_dir = os.path.join(cfg.DATASET_DIR, 'train')
+    test_dir = os.path.join(cfg.DATASET_DIR, 'val')
+    train_tfrecord_files = [os.path.join(train_dir, x) for x in os.listdir(train_dir)]
+    test_tfrecord_files = [os.path.join(test_dir, x) for x in os.listdir(test_dir)]
+
     data_reader = DataReader(cfg.INPUT_SHAPE, cfg.ANCHORS, cfg.NUM_CLASSES, cfg.MAX_BOXES)
-    train_dataset = data_reader.build_dataset(os.path.join(os.curdir, cfg.DATASET_DIR, 'train.tfrecords'),
-                                              is_training=True, batch_size=cfg.TRAIN_BATCH_SIZE)
-    test_dataset = data_reader.build_dataset(os.path.join(os.curdir, cfg.DATASET_DIR, 'test.tfrecords'),
-                                             is_training=False, batch_size=cfg.TEST_BATCH_SIZE)
+    train_dataset = data_reader.build_dataset(train_tfrecord_files, is_training=True, batch_size=cfg.TRAIN_BATCH_SIZE)
+    test_dataset = data_reader.build_dataset(test_tfrecord_files, is_training=False, batch_size=cfg.TEST_BATCH_SIZE)
     # print(train_dataset.output_shapes)
     iterator = tf.data.Iterator. \
         from_structure(output_types=train_dataset.output_types,

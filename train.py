@@ -42,10 +42,10 @@ def train():
     images, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
     bbox_true = [bbox_true_13, bbox_true_26, bbox_true_52]
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, cfg.NUM_CLASSES)
-    output = model.yolo_inference(images, is_training)
+    output = model.yolo_inference(images, is_training, l2_lamda=cfg.L2_LAMDA)
     loss = model.yolo_loss(output, bbox_true, ignore_thresh=0.5)
-    # l2_loss = tf.losses.get_regularization_loss()
-    # loss += l2_loss
+    l2_loss = tf.losses.get_regularization_loss()
+    loss += l2_loss
     tf.summary.scalar('loss', loss)
     list_vars = list(tf.global_variables())
 

@@ -15,12 +15,12 @@ LOG_DIR = './logs'
 CHECKPOINT_DIR = './checkpoint'
 
 MAX_BOXES = 20
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 
-PRE_TRAIN = False
+PRE_TRAIN = True
 MODEL_DIR = './checkpoint'
 DARKNET53_WEIGHTS_PATH = './model-data/darknet53.weights'
-N_EPOCHS = 1000
+N_EPOCHS = 500
 
 TRAIN_BATCH_SIZE = 8
 TEST_BATCH_SIZE = 8

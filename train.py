@@ -11,7 +11,8 @@ from metric import cal_AP
 
 
 def train():
-    logs_dir = cfg.LOG_DIR + datetime.datetime.now().strftime("%YY%mm%dd%HH%MM%SS")
+    # logs_dir = cfg.LOG_DIR + datetime.datetime.now().strftime("%YY%mm%dd%HH%MM%SS")
+    logs_dir = cfg.LOG_DIR
 
     input_shape = np.array(cfg.INPUT_SHAPE, dtype=np.int32)
     grid_shapes = [input_shape // 32, input_shape // 16, input_shape // 8]
@@ -41,15 +42,15 @@ def train():
     images, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
     bbox_true = [bbox_true_13, bbox_true_26, bbox_true_52]
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, cfg.NUM_CLASSES)
-    output = model.yolo_inference(images, is_training)
+    output = model.yolo_inference(images, is_training, l2_lamda=cfg.L2_LAMDA)
     loss = model.yolo_loss(output, bbox_true, ignore_thresh=0.5)
-    # l2_loss = tf.losses.get_regularization_loss()
-    # loss += l2_loss
+    l2_loss = tf.losses.get_regularization_loss()
+    loss += l2_loss
     tf.summary.scalar('loss', loss)
     list_vars = list(tf.global_variables())
 
     global_step = tf.Variable(0, trainable=False)
-    lr = tf.train.exponential_decay(cfg.LEARNING_RATE, global_step, decay_steps=1000, decay_rate=0.8)
+    lr = tf.train.exponential_decay(cfg.LEARNING_RATE, global_step, decay_steps=8000, decay_rate=0.8)
     tf.summary.scalar('learning-rate', lr)
     merged_summary = tf.summary.merge_all()
     optimizer = tf.train.AdamOptimizer(lr)
@@ -139,16 +140,16 @@ def train():
                 mAP = np.mean(AP)
                 test_writer.add_summary(
                     summary=tf.Summary(value=[tf.Summary.Value(tag='mAP', simple_value=mAP)]),
-                    global_step=global_step_value
+                    global_step=epoch
                 )
                 del grouth_truth_
                 del predict_
                 del AP
                 del mAP
 
-            if epoch % 5 == 0:
-                checkpoint_path = os.path.join(cfg.CHECKPOINT_DIR, 'model.ckpt')
-                saver.save(sess, checkpoint_path, global_step=epoch)
+            if epoch % 10 == 0:
+                checkpoint_path = os.path.join(cfg.CHECKPOINT_DIR, 'model.ckpt-{}'.format(epoch))
+                saver.save(sess, checkpoint_path)
 
 
 def initialize_uninitialized(sess):

@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.ops import gen_image_ops
+
 # import config as cf
 
 slim = tf.contrib.slim
@@ -265,7 +266,7 @@ class Yolov3:
         self.num_anchors = len(anchors)
         self.anchors_tensor = tf.reshape(tf.constant(anchors), shape=(-1, 2))
 
-    def yolo_inference(self, inputs, is_training=False, reuse=False):
+    def yolo_inference(self, inputs, is_training=False, reuse=False, l2_lamda=0.0):
         """
         Creates YOLO v3 model.
         :param inputs: a 4-D tensor of size [batch_size, height, width, channels].
@@ -294,7 +295,7 @@ class Yolov3:
         # Set activation_fn and parameters for conv2d, batch_norm.
         with slim.arg_scope([slim.conv2d, slim.batch_norm, _fixed_padding], reuse=reuse):
             with slim.arg_scope([slim.conv2d], normalizer_fn=slim.batch_norm, normalizer_params=batch_norm_params,
-                                biases_initializer=None,
+                                biases_initializer=None, weights_regularizer=slim.l2_regularizer(l2_lamda),
                                 activation_fn=lambda x: tf.nn.leaky_relu(x, alpha=self.leaky_relu)):
                 with tf.variable_scope('darknet53'):
                     route_1, route_2, inputs = darknet53(inputs)
@@ -427,14 +428,12 @@ class Yolov3:
         mask = box_scores > score_threshold  # shape=(batch_size, m, num_classes)
         max_boxes_tensor = tf.constant(max_boxes, tf.int32)
 
-
         result_bbox = tf.TensorArray(tf.float32, size=batch_size)
 
         def loop_body(b, result_bbox):
             boxes_b = tf.gather(boxes, b)  # shape=(m, boxes)
             mask_b = tf.gather(mask, b)  # shape=(m, num_classes)
             box_scores_b = tf.gather(box_scores, b)
-
 
             boxes_ = []
             scores_ = []

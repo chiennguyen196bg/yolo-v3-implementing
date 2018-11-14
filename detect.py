@@ -50,7 +50,7 @@ def detect(image_path, class_names, model_path, yolo_weights=None):
             draw = ImageDraw.Draw(image)
             label_size = draw.textsize(label, font)
 
-            top, left, bottom, right = box
+            left, top, right, bottom = box
             top = max(0, np.floor(top + 0.5).astype('int32'))
             left = max(0, np.floor(left + 0.5).astype('int32'))
             bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
@@ -84,4 +84,4 @@ if __name__ == '__main__':
         class_names = list(x.strip() for x in lines)
     # print(len(class_names))
     # detect('./800px-People_at_Confluence_Park-2.jpg', class_names, model_path=None, yolo_weights='./model-data/yolov3.weights')
-    detect('./NFPA-Labels.jpg', ['nfpa'], model_path='./checkpoint/model.ckpt-10', yolo_weights=None)
+    detect('./100.png', ['nfpa'], model_path='./checkpoint/model.ckpt-180', yolo_weights=None)

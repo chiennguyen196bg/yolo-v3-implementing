@@ -410,7 +410,10 @@ class Yolov3:
         return loss
 
     def yolo_predict(self, yolo_outputs, image_shape, max_boxes=20, score_threshold=.6, iou_threshold=.5):
-        """Evaluate YOLO model on given input and return filtered boxes."""
+        """
+        Evaluate YOLO model on given input and return filtered boxes.
+        :return predict_boxes: shape=(m, max_boxes, 6). xmin, ymin, xmax, ymax, confidence, class_id
+        """
         num_layers = len(yolo_outputs)
         batch_size = tf.shape(yolo_outputs[0])[0]
         anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]] if num_layers == 3 else [[3, 4, 5], [1, 2, 3]]
@@ -428,9 +431,9 @@ class Yolov3:
         mask = box_scores > score_threshold  # shape=(batch_size, m, num_classes)
         max_boxes_tensor = tf.constant(max_boxes, tf.int32)
 
-        result_bbox = tf.TensorArray(tf.float32, size=batch_size)
+        predict_boxes = tf.TensorArray(tf.float32, size=batch_size)
 
-        def loop_body(b, result_bbox):
+        def loop_body(b, predict_boxes):
             boxes_b = tf.gather(boxes, b)  # shape=(m, boxes)
             mask_b = tf.gather(mask, b)  # shape=(m, num_classes)
             box_scores_b = tf.gather(box_scores, b)
@@ -452,20 +455,22 @@ class Yolov3:
             boxes_ = tf.concat(boxes_, axis=0)  # shape=(?, 4)
             scores_ = tf.concat(scores_, axis=0)  # shape=(?, 1)
             classes_ = tf.concat(classes_, axis=0)  # shape=(?, 1)
-            result_bbox_b = tf.concat([boxes_, tf.reshape(scores_, [-1, 1]), tf.reshape(classes_, [-1, 1])], axis=-1)
-            result_bbox_b = tf.cond(
+            predict_boxes_b = tf.concat([boxes_, tf.reshape(scores_, [-1, 1]), tf.reshape(classes_, [-1, 1])], axis=-1)
+            predict_boxes_b = tf.cond(
                 tf.greater(tf.shape(boxes_)[0], max_boxes_tensor),
-                lambda: tf.gather(result_bbox_b, tf.nn.top_k(scores_, k=max_boxes).indices),
-                lambda: tf.pad(result_bbox_b, paddings=[[0, max_boxes_tensor - tf.shape(result_bbox_b)[0]], [0, 0]],
+                lambda: tf.gather(predict_boxes_b, tf.nn.top_k(scores_, k=max_boxes).indices),
+                lambda: tf.pad(predict_boxes_b, paddings=[[0, max_boxes_tensor - tf.shape(predict_boxes_b)[0]], [0, 0]],
                                mode='CONSTANT')
             )
-            result_bbox = result_bbox.write(b, result_bbox_b)
-            return b + 1, result_bbox
+            predict_boxes = predict_boxes.write(b, predict_boxes_b)
+            return b + 1, predict_boxes
 
-        _, result_bbox = tf.while_loop(lambda b, result_bbox: b < batch_size, loop_body, [0, result_bbox])
-        result_bbox = result_bbox.stack()
-        result_bbox = tf.reshape(result_bbox, [batch_size, max_boxes_tensor, 6])
-        return result_bbox
+        _, predict_boxes = tf.while_loop(lambda b, predict_boxes: b < batch_size, loop_body, [0, predict_boxes])
+        predict_boxes = predict_boxes.stack()
+        predict_boxes = tf.reshape(predict_boxes, [batch_size, max_boxes_tensor, 6])
+        ymin, xmin, ymax, xmax, confidence, class_id = tf.split(predict_boxes, num_or_size_splits=6, axis=-1)
+        predict_boxes = tf.concat([xmin, ymin, xmax, ymax, confidence, class_id], axis=-1)
+        return predict_boxes
 
 #
 # def detections_boxes(detections):

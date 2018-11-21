@@ -6,3 +6,5 @@ __pycache__/
 dataset/*
 model-data/*
 logs*
+checkpoint/
+data/

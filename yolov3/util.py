@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from PIL import Image
+import cv2
 
 
 def load_weights(var_list, weights_file):
@@ -74,3 +75,20 @@ def letterbox_image(image, size):
     new_image = Image.new('RGB', size, (128, 128, 128))
     new_image.paste(image, ((w - nw) // 2, (h - nh) // 2))
     return new_image
+
+
+def letterbox_image_opencv(image, size):
+    ih, iw = image.shape[0:2]
+    w, h = size
+    scale = min(w / iw, h / ih)
+    nw = int(iw * scale)
+    nh = int(ih * scale)
+
+    dw = w - nw
+    dh = h - nh
+    top, bottom = dh // 2, dh - (dh // 2)
+    left, right = dw // 2, dw - (dw // 2)
+
+    resized_img = cv2.resize(image, (nw, nh))
+    pad_img = cv2.copyMakeBorder(resized_img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(128, 128, 128))
+    return pad_img

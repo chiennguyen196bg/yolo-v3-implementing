@@ -3,9 +3,9 @@ test.*
 .idea/
 __pycache__/
 **/*test.py
-
+dataset/*
 model-data/*
 logs*
 checkpoint/
 data/
-.vscode/
+.vscode

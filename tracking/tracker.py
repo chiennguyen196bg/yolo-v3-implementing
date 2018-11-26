@@ -19,13 +19,16 @@ class Track(object):
         self.skipped_frames = 0
         self.trace = []
         self.max_trace_length = max_trace_length
+        self.hit_streak = 0
 
     def update(self, detection=None):
         if detection is not None:
             self.skipped_frames = 0
+            self.hit_streak += 1
             self.KF.correct(detection[..., 0:4])
         else:
             self.skipped_frames += 1
+            self.hit_streak = 0
             # self.KF.update_state_without_measurement()
 
         if len(self.trace) > self.max_trace_length:
@@ -81,7 +84,7 @@ def associate_detections_to_trackers(detections, predictions, iou_threshold=0.3)
 
 
 class Tracker(object):
-    def __init__(self, iou_thresh, max_frames_to_skip, max_trace_length, track_count_id):
+    def __init__(self, iou_thresh, max_frames_to_skip, max_trace_length):
         """
         Initialize variables used by Tracker class
         :param iou_thresh: track will be deleted and new track will be created if iou between detection and prediction
@@ -94,7 +97,7 @@ class Tracker(object):
         self.max_frames_to_skip = max_frames_to_skip
         self.max_trace_length = max_trace_length
         self.tracks = []
-        self.track_id_count = track_count_id
+        self.track_id_count = 0
 
     def update(self, detections):
         # Must have to call this to predict next state of each tracks
@@ -156,7 +159,8 @@ def test():
         for trk in tracker.tracks:
             bbox = trk.get_state().reshape((-1)).astype(np.uint)
             color = random_colors[trk.track_id]
-            cv2.rectangle(image, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color=(int(color[0]), int(color[1]), int(color[2])),
+            cv2.rectangle(image, (bbox[0], bbox[1]), (bbox[2], bbox[3]),
+                          color=(int(color[0]), int(color[1]), int(color[2])),
                           thickness=3)
         cv2.imshow('image', image)
 

@@ -21,11 +21,11 @@ def detect(video_path, class_names, model_path, out_video_path='out'):
         saver.restore(sess, model_path)
 
         cap = cv2.VideoCapture(video_path)
-        frame_width = int(cap.get(3))
-        frame_height = int(cap.get(4))
-        # fps = cap.get(7)
+        frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = cap.get(cv2.CAP_PROP_FPS)
         # print('Fps: ', fps)
-        out = cv2.VideoWriter(out_video_path, cv2.VideoWriter_fourcc(*'MP4V'), 30.0, (frame_width,frame_height))
+        out = cv2.VideoWriter(out_video_path, cv2.VideoWriter_fourcc(*'MP4V'), fps, (frame_width, frame_height))
         while cap.isOpened():
             ret, image = cap.read()
             img_resized = letterbox_image_opencv(image, cfg.INPUT_SHAPE)

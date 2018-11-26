@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-import config as cfg
+from yolov3 import config as cfg
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 

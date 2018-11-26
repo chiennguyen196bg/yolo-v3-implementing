@@ -1,10 +1,9 @@
 import numpy as np
 import tensorflow as tf
 from data import DataReader
-import config as cfg
+from yolov3 import config as cfg
 import os
 import time
-import datetime
 from yolov3.model import Yolov3
 from yolov3.util import load_weights
 from metric import cal_AP

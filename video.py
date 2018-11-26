@@ -1,9 +1,8 @@
-import os
 import numpy as np
 import tensorflow as tf
 import cv2
 from yolov3.model import Yolov3
-import config as cfg
+from yolov3 import config as cfg
 from yolov3.util import letterbox_image_opencv
 
 

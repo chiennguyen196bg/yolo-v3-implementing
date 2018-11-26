@@ -190,7 +190,7 @@ def yolo_head(raw_detect, anchors, num_classes, input_shape, calc_loss=False):
         return box_xy, box_wh, box_confidence, box_class_probs
 
 
-def box_iou(box1, box2):
+def box_iou_tensor(box1, box2):
     """
     calculate iou
     :param box1: tensor, shape=[grid_h, grid_w, anchors, xywh]
@@ -379,7 +379,7 @@ class Yolov3:
                 _object_mask_bool = tf.gather(object_mask_bool, b)
                 _pred_box = tf.gather(pred_box, b)
                 true_box = tf.boolean_mask(_y_true[..., 0:4], _object_mask_bool[..., 0])  # shape=(t,4)
-                iou = box_iou(_pred_box, true_box)  # shape=(grid_h, grid_w, num_anchor, num_true_box)
+                iou = box_iou_tensor(_pred_box, true_box)  # shape=(grid_h, grid_w, num_anchor, num_true_box)
                 best_iou = tf.reduce_max(iou, axis=-1)
                 ignore_mask = ignore_mask.write(b, tf.cast(best_iou < ignore_thresh, tf.float32))
                 return b + 1, ignore_mask

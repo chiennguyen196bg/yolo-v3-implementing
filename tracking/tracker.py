@@ -26,7 +26,7 @@ class Track(object):
             self.KF.correct(detection[..., 0:4])
         else:
             self.skipped_frames += 1
-            self.KF.update_state_without_measurement()
+            # self.KF.update_state_without_measurement()
 
         if len(self.trace) > self.max_trace_length:
             self.trace.pop(0)
@@ -97,6 +97,7 @@ class Tracker(object):
         self.track_id_count = track_count_id
 
     def update(self, detections):
+        # Must have to call this to predict next state of each tracks
         predictions = np.array([trk.predict() for trk in self.tracks]).reshape(-1, 4)
         if len(detections) == 0:
             for trk in self.tracks:
@@ -132,11 +133,13 @@ def test():
     detect_1 = np.array([0, 0, 20, 25, 0], dtype=np.uint)
     detect_2 = np.array([900, 900, 930, 940, 0], dtype=np.uint)
     detect_history = []
+
+    random_colors = np.random.randint(0, 255, (100, 3), dtype=np.uint)
     for _ in range(100):
         detect_1 = detect_1 + 5
         detect_2 = detect_2 - 6
-        noise_detect_1 = detect_1 + np.random.randint(10, 15, (5,), dtype=np.uint)
-        noise_detect_2 = detect_2 + np.random.randint(10, 15, (5,), dtype=np.uint)
+        noise_detect_1 = detect_1 + np.random.randint(90, 100, (5,), dtype=np.uint)
+        noise_detect_2 = detect_2 + np.random.randint(50, 60, (5,), dtype=np.uint)
         detect_history.append(np.concatenate([noise_detect_1, noise_detect_2], axis=0).reshape(-1, 5))
 
     tracker = Tracker(0.3, 3, 10, 0)
@@ -152,7 +155,9 @@ def test():
         print(len(tracker.tracks))
         for trk in tracker.tracks:
             bbox = trk.get_state().reshape((-1)).astype(np.uint)
-            cv2.rectangle(image, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color=(255, 0, 0), thickness=3)
+            color = random_colors[trk.track_id]
+            cv2.rectangle(image, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color=(int(color[0]), int(color[1]), int(color[2])),
+                          thickness=3)
         cv2.imshow('image', image)
 
         time.sleep(0.2)

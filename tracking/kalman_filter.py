@@ -64,9 +64,9 @@ class KalmanFilterWrapper(object):
         self.kf.update(convert_bbox_to_z(bbox))
         return self.get_state()
 
-    def update_state_without_measurement(self):
-        self.kf.update(self.kf.x[:4])
-        return self.get_state()
+    # def update_state_without_measurement(self):
+    #     self.kf.update(self.kf.x[:4])
+    #     return self.get_state()
 
     def get_state(self):
         return convert_x_to_bbox(self.kf.x)

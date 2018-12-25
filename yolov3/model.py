@@ -190,7 +190,7 @@ def yolo_head(raw_detect, anchors, num_classes, input_shape, calc_loss=False):
         return box_xy, box_wh, box_confidence, box_class_probs
 
 
-def box_iou(box1, box2):
+def box_iou_tensor(box1, box2):
     """
     calculate iou
     :param box1: tensor, shape=[grid_h, grid_w, anchors, xywh]
@@ -266,7 +266,7 @@ class Yolov3:
         self.num_anchors = len(anchors)
         self.anchors_tensor = tf.reshape(tf.constant(anchors), shape=(-1, 2))
 
-    def yolo_inference(self, inputs, is_training=False, reuse=False, l2_lamda=0.0):
+    def yolo_inference(self, inputs, is_training=False, reuse=False, weight_decay=0.0):
         """
         Creates YOLO v3 model.
         :param inputs: a 4-D tensor of size [batch_size, height, width, channels].
@@ -295,7 +295,7 @@ class Yolov3:
         # Set activation_fn and parameters for conv2d, batch_norm.
         with slim.arg_scope([slim.conv2d, slim.batch_norm, _fixed_padding], reuse=reuse):
             with slim.arg_scope([slim.conv2d], normalizer_fn=slim.batch_norm, normalizer_params=batch_norm_params,
-                                biases_initializer=None, weights_regularizer=slim.l2_regularizer(l2_lamda),
+                                biases_initializer=None, weights_regularizer=slim.l2_regularizer(weight_decay),
                                 activation_fn=lambda x: tf.nn.leaky_relu(x, alpha=self.leaky_relu)):
                 with tf.variable_scope('darknet53'):
                     route_1, route_2, inputs = darknet53(inputs)
@@ -379,7 +379,7 @@ class Yolov3:
                 _object_mask_bool = tf.gather(object_mask_bool, b)
                 _pred_box = tf.gather(pred_box, b)
                 true_box = tf.boolean_mask(_y_true[..., 0:4], _object_mask_bool[..., 0])  # shape=(t,4)
-                iou = box_iou(_pred_box, true_box)  # shape=(grid_h, grid_w, num_anchor, num_true_box)
+                iou = box_iou_tensor(_pred_box, true_box)  # shape=(grid_h, grid_w, num_anchor, num_true_box)
                 best_iou = tf.reduce_max(iou, axis=-1)
                 ignore_mask = ignore_mask.write(b, tf.cast(best_iou < ignore_thresh, tf.float32))
                 return b + 1, ignore_mask

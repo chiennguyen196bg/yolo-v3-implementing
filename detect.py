@@ -2,8 +2,7 @@ from PIL import Image, ImageDraw
 import numpy as np
 import tensorflow as tf
 from yolov3.util import letterbox_image, load_weights
-import config as cfg
-import os
+from yolov3 import config as cfg
 from yolov3.model import Yolov3
 
 

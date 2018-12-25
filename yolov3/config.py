@@ -8,7 +8,7 @@ ANCHORS = [(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90
 INPUT_SHAPE = [416, 416]
 NUM_CLASSES = 1
 
-DATASET_DIR = "dataset/coconut/"
+DATASET_DIR = "dataset/pedestrian-dataset"
 
 LOG_DIR = './logs'
 
@@ -26,4 +26,4 @@ TRAIN_BATCH_SIZE = 8
 TEST_BATCH_SIZE = 8
 
 
-L2_LAMDA = 0.001
+WEIGHT_DECAY = 0.001

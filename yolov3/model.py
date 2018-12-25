@@ -266,7 +266,7 @@ class Yolov3:
         self.num_anchors = len(anchors)
         self.anchors_tensor = tf.reshape(tf.constant(anchors), shape=(-1, 2))
 
-    def yolo_inference(self, inputs, is_training=False, reuse=False, l2_lamda=0.0):
+    def yolo_inference(self, inputs, is_training=False, reuse=False, weight_decay=0.0):
         """
         Creates YOLO v3 model.
         :param inputs: a 4-D tensor of size [batch_size, height, width, channels].
@@ -295,7 +295,7 @@ class Yolov3:
         # Set activation_fn and parameters for conv2d, batch_norm.
         with slim.arg_scope([slim.conv2d, slim.batch_norm, _fixed_padding], reuse=reuse):
             with slim.arg_scope([slim.conv2d], normalizer_fn=slim.batch_norm, normalizer_params=batch_norm_params,
-                                biases_initializer=None, weights_regularizer=slim.l2_regularizer(l2_lamda),
+                                biases_initializer=None, weights_regularizer=slim.l2_regularizer(weight_decay),
                                 activation_fn=lambda x: tf.nn.leaky_relu(x, alpha=self.leaky_relu)):
                 with tf.variable_scope('darknet53'):
                     route_1, route_2, inputs = darknet53(inputs)

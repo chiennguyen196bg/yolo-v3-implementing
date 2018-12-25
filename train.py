@@ -41,16 +41,17 @@ def train():
     images, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
     bbox_true = [bbox_true_13, bbox_true_26, bbox_true_52]
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, cfg.NUM_CLASSES)
-    output = model.yolo_inference(images, is_training, l2_lamda=cfg.L2_LAMDA)
+    output = model.yolo_inference(images, is_training, weight_decay=0.0)
     loss = model.yolo_loss(output, bbox_true, ignore_thresh=0.5)
-    l2_loss = tf.losses.get_regularization_loss()
-    loss += l2_loss
+    # l2_loss = tf.losses.get_regularization_loss()
+    # loss += l2_loss
     tf.summary.scalar('loss', loss)
     list_vars = list(tf.global_variables())
 
     global_step = tf.Variable(0, trainable=False)
-    lr = tf.train.exponential_decay(cfg.LEARNING_RATE, global_step, decay_steps=8000, decay_rate=0.8)
-    tf.summary.scalar('learning-rate', lr)
+    # lr = tf.train.exponential_decay(cfg.LEARNING_RATE, global_step, decay_steps=8000, decay_rate=0.8)
+    # tf.summary.scalar('learning-rate', lr)
+    lr = tf.constant(cfg.LEARNING_RATE, dtype=tf.float32)
     merged_summary = tf.summary.merge_all()
     optimizer = tf.train.AdamOptimizer(lr)
 

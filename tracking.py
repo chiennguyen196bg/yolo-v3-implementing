@@ -31,11 +31,6 @@ def track():
             detection_boxes = detector.predict(image)
             tracker.update(detection_boxes)
 
-            tracks = tracker.tracks
-            for _track in tracks:
-                if _track.track_id is None and _track.hit_streak > 4:
-                    tracker.give_track_id(_track)
-
             for trk in tracker.tracks:
                 bbox = trk.get_state()
                 # print(bbox)
@@ -44,7 +39,7 @@ def track():
                 color = (int(color[0]), int(color[1]), int(color[2]))
                 image = cv2.rectangle(image, (xmin, ymin), (xmax, ymax), color=color, thickness=3)
 
-            label = "{}: {}, fps: {}".format(class_names[0], tracker.track_id_count, int(1/(time.time() - start_time)))
+            label = "{}: {}, fps: {}".format(class_names[0], tracker.num_track_is_tracked, int(1/(time.time() - start_time)))
             # print(label)
             cv2.putText(image, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 3)
             # print(tracker.track_id_count)

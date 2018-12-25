@@ -9,7 +9,7 @@ class Track(object):
     Track class for every object to be tracked
     """
 
-    def __init__(self, detection, track_id=None, max_trace_length=10):
+    def __init__(self, detection, track_id, tracker, max_trace_length=10):
         """
         :param detection: predicted [xmin, ymin, xmax, ymax] of object to be tracked
         :param track_id: indentification of each track object
@@ -20,12 +20,17 @@ class Track(object):
         self.trace = []
         self.max_trace_length = max_trace_length
         self.hit_streak = 0
+        self.is_tracking = False
+        self.tracker = tracker
 
     def update(self, detection=None):
         if detection is not None:
             self.skipped_frames = 0
             self.hit_streak += 1
             self.KF.correct(detection[..., 0:4])
+            if self.hit_streak > 10 and self.is_tracking is False:
+                self.is_tracking = True
+                self.tracker.num_track_is_tracked += 1
         else:
             self.skipped_frames += 1
             self.hit_streak = 0
@@ -98,6 +103,7 @@ class Tracker(object):
         self.max_trace_length = max_trace_length
         self.tracks = []
         self.track_id_count = 0
+        self.num_track_is_tracked = 0
 
     def update(self, detections):
         # Must have to call this to predict next state of each tracks
@@ -116,19 +122,14 @@ class Tracker(object):
             self.tracks[t].update()
 
         for d in unmatched_dets:
-            trk = Track(detections[d, :])
+            trk = Track(detections[d, :], self.track_id_count, self)
             self.tracks.append(trk)
-            # self.track_id_count += 1
+            self.track_id_count += 1
 
         # if tracks are not detected for a long time, remove them
         for t, trk in reversed(list(enumerate(self.tracks))):
             if trk.skipped_frames > self.max_frames_to_skip:
                 self.tracks.pop(t)
-
-    def give_track_id(self, track: Track):
-        track.track_id = self.track_id_count
-        self.track_id_count += 1
-
 
 
 # test

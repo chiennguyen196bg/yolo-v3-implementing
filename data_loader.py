@@ -148,10 +148,10 @@ class DataReader:
 
 
 if __name__ == '__main__':
-    DATASET_DIR = "dataset/nfpa/"
+    DATASET_DIR = "dataset/pedestrian-dataset/train"
+    tfrecord_files = [os.path.join(DATASET_DIR, x) for x in os.listdir(DATASET_DIR)]
     reader = DataReader(cfg.INPUT_SHAPE, cfg.ANCHORS, 1)
-    dataset = reader.build_dataset(os.path.join(os.curdir, DATASET_DIR, 'train.tfrecords'), is_training=True,
-                                   batch_size=6)
+    dataset = reader.build_dataset(tfrecord_files, is_training=True, batch_size=6)
     iterator = dataset.make_one_shot_iterator()
     image, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
     fig, ax = plt.subplots(1)
@@ -162,29 +162,20 @@ if __name__ == '__main__':
                 images_out, bbox_out, bbox_true_13_out, bbox_true_26_out, bbox_true_52_out = sess.run(
                     [image, bbox, bbox_true_13, bbox_true_26, bbox_true_52])
                 m = 2
-                ax.imshow(images_out[m])
-                xmin, ymin, xmax, ymax = bbox_out[m][0][0:4]
-                print(xmin, ymin, xmax, ymax)
-                xcenter, ycenter = (xmax - xmin) / 2 + xmin, (ymax - ymin) / 2 + ymin
-                print(xcenter, ycenter)
-                xcenter = xcenter / 416
-                ycenter = ycenter / 416
-                xcenter_13 = np.floor(xcenter * 13).astype('int32')
-                ycenter_13 = np.floor(ycenter * 13).astype('int32')
-                xcenter_26 = np.floor(xcenter * 26).astype('int32')
-                ycenter_26 = np.floor(ycenter * 26).astype('int32')
-                xcenter_52 = np.floor(xcenter * 52).astype('int32')
-                ycenter_52 = np.floor(ycenter * 52).astype('int32')
-                print(xcenter_13, ycenter_13)
-                print(xcenter_26, ycenter_26)
-                print(xcenter_52, ycenter_52)
-                rect = patches.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, linewidth=1, edgecolor='r',
-                                         facecolor='none')
-                ax.add_patch(rect)
+                sample_image = images_out[m]
+                ax.imshow(sample_image)
+                sample_bboxes = bbox_out[m]
+                print(sample_bboxes)
+                sample_bboxes = sample_bboxes[sample_bboxes[..., 3] > 0]
+
+                for bbox in sample_bboxes:
+                    xmin, ymin, xmax, ymax = bbox[0:4]
+
+                    rect = patches.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, linewidth=1, edgecolor='r',
+                                             facecolor='none')
+                    ax.add_patch(rect)
                 plt.show()
-                print(bbox_true_13_out[m][ycenter_13][xcenter_13])
-                print(bbox_true_26_out[m][ycenter_26][xcenter_26])
-                print(bbox_true_52_out[m][ycenter_52][xcenter_52])
+
                 break
         except tf.errors.OutOfRangeError:
             pass

@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from data import DataReader
+from data_loader import DataReader
 from yolov3 import config as cfg
 import os
 import time

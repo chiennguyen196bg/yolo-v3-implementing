@@ -142,6 +142,7 @@ def train():
                     summary=tf.Summary(value=[tf.Summary.Value(tag='mAP', simple_value=mAP)]),
                     global_step=epoch
                 )
+                print('AP', AP, 'mAP:', mAP)
                 del grouth_truth_
                 del predict_
                 del AP

@@ -9,7 +9,7 @@ class Track(object):
     Track class for every object to be tracked
     """
 
-    def __init__(self, detection, track_id, max_trace_length=10):
+    def __init__(self, detection, track_id=None, max_trace_length=10):
         """
         :param detection: predicted [xmin, ymin, xmax, ymax] of object to be tracked
         :param track_id: indentification of each track object
@@ -116,14 +116,19 @@ class Tracker(object):
             self.tracks[t].update()
 
         for d in unmatched_dets:
-            trk = Track(detections[d, :], self.track_id_count)
+            trk = Track(detections[d, :])
             self.tracks.append(trk)
-            self.track_id_count += 1
+            # self.track_id_count += 1
 
         # if tracks are not detected for a long time, remove them
         for t, trk in reversed(list(enumerate(self.tracks))):
             if trk.skipped_frames > self.max_frames_to_skip:
                 self.tracks.pop(t)
+
+    def give_track_id(self, track: Track):
+        track.track_id = self.track_id_count
+        self.track_id_count += 1
+
 
 
 # test

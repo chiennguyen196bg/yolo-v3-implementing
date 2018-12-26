@@ -9,7 +9,7 @@ ANCHORS = [(5, 12), (8, 21), (6, 29), (11, 26), (21, 17), (35, 23), (18, 53), (3
 INPUT_SHAPE = [416, 416]
 NUM_CLASSES = 1
 
-DATASET_DIR = "dataset/MOT17Det/train"
+DATASET_DIR = "dataset/MOT17Det1"
 
 LOG_DIR = './logs'
 

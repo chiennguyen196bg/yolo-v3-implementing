@@ -122,7 +122,7 @@ def train():
             )
 
             # Calculate mAP
-            if epoch % 10 == 0:
+            if epoch % 5 == 0:
                 print("Calculate mAP on test set")
                 predict_ = []
                 grouth_truth_ = []

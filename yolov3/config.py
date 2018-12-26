@@ -15,7 +15,7 @@ LOG_DIR = './logs'
 
 CHECKPOINT_DIR = './checkpoint'
 
-MAX_BOXES = 60
+MAX_BOXES = 40
 LEARNING_RATE = 0.001
 
 PRE_TRAIN = True

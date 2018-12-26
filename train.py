@@ -90,7 +90,7 @@ def train():
         for epoch in range(cfg.N_EPOCHS):
             # Train phrase
             sess.run(train_init)
-            train_loss = 0
+            train_losses = []
             try:
                 while True:
                     start_time = time.time()
@@ -101,13 +101,14 @@ def train():
                     format_str = 'Epoch {} step {},  train loss = {} ( {} examples/sec; {} ''sec/batch)'
                     print(format_str.format(epoch, global_step_value, train_loss, examples_per_sec, duration))
                     train_writer.add_summary(summary_value, global_step=global_step_value)
+                    train_losses.append(train_loss)
             except tf.errors.OutOfRangeError:
-                pass
-
-            train_writer.add_summary(
-                summary=tf.Summary(value=[tf.Summary.Value(tag='loss_per_epoch', simple_value=train_loss)]),
-                global_step=epoch
-            )
+                train_writer.add_summary(
+                    summary=tf.Summary(
+                        value=[tf.Summary.Value(tag='loss_per_epoch', simple_value=np.mean(train_losses))]),
+                    global_step=epoch
+                )
+                train_losses.clear()
 
             # Test phrase
             # sess.run(test_init)

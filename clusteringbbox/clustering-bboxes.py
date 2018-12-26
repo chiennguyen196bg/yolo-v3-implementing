@@ -26,18 +26,15 @@ def load_dataset():
     # 		dataset.append([xmax - xmin, ymax - ymin])
 
     TRAINING_DATASET_DIR = "../dataset/MOT17Det/train/train"
-    VALIDATING_DATASET_DIR = "../dataset/MOT17Det/train/val"
+    # VALIDATING_DATASET_DIR = "../dataset/MOT17Det/train/val"
 
     train_tfrecord_files = [os.path.join(TRAINING_DATASET_DIR, x) for x in os.listdir(TRAINING_DATASET_DIR)]
-    validating_tfrecord_files = [os.path.join(VALIDATING_DATASET_DIR, x) for x in os.listdir(VALIDATING_DATASET_DIR)]
+    # validating_tfrecord_files = [os.path.join(VALIDATING_DATASET_DIR, x) for x in os.listdir(VALIDATING_DATASET_DIR)]
 
     reader = DataReader(cfg.INPUT_SHAPE, cfg.ANCHORS, 1, max_boxes=60)
-    dataset = reader.build_dataset(train_tfrecord_files + validating_tfrecord_files, is_training=False, batch_size=6)
+    dataset = reader.build_dataset(train_tfrecord_files, is_training=False, batch_size=6)
     iterator = dataset.make_one_shot_iterator()
     image, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
-
-    height = cfg.INPUT_SHAPE[0]
-    width = cfg.INPUT_SHAPE[1]
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -64,7 +61,7 @@ if __name__ == '__main__':
     print('Clustering')
     out = kmeans(data, k=CLUSTERS)
     print("Accuracy: {:.2f}%".format(avg_iou(data, out) * 100))
-    print("Boxes:\n {}".format(out))
+    print("Boxes:\n {}".format(np.round(out)))
 
     ratios = np.around(out[:, 0] / out[:, 1], decimals=2).tolist()
     print("Ratios:\n {}".format(sorted(ratios)))

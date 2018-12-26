@@ -3,12 +3,13 @@ BATCH_NORM_DECAY = 0.9
 BATCH_NORM_EPSILON = 1e-05
 LEAKY_RELU = 0.1
 
-ANCHORS = [(5, 13), (8, 23), (20, 17), (12, 38), (33, 21), (19, 54), (41, 29), (36, 98), (72, 194)]
+# ANCHORS = [(5, 13), (8, 23), (20, 17), (12, 38), (33, 21), (19, 54), (41, 29), (36, 98), (72, 194)]
+ANCHORS = [(5, 12), (8, 21), (6, 29), (11, 26), (21, 17), (35, 23), (18, 53), (35, 96), (72, 177)]
 
 INPUT_SHAPE = [416, 416]
 NUM_CLASSES = 1
 
-DATASET_DIR = "dataset/MOT17Det"
+DATASET_DIR = "dataset/MOT17Det1"
 
 LOG_DIR = './logs'
 

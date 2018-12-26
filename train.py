@@ -41,10 +41,10 @@ def train():
     images, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
     bbox_true = [bbox_true_13, bbox_true_26, bbox_true_52]
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, cfg.NUM_CLASSES)
-    output = model.yolo_inference(images, is_training, weight_decay=0.0)
+    output = model.yolo_inference(images, is_training, weight_decay=cfg.WEIGHT_DECAY)
     loss = model.yolo_loss(output, bbox_true, ignore_thresh=0.5)
-    # l2_loss = tf.losses.get_regularization_loss()
-    # loss += l2_loss
+    l2_loss = tf.losses.get_regularization_loss()
+    loss += l2_loss
     tf.summary.scalar('loss', loss)
     list_vars = list(tf.global_variables())
 
@@ -93,13 +93,13 @@ def train():
             train_losses = []
             try:
                 while True:
-                    start_time = time.time()
+                    # start_time = time.time()
                     train_loss, summary_value, global_step_value, _ = sess.run(
                         [loss, merged_summary, global_step, train_op], {is_training: True})
-                    duration = time.time() - start_time
-                    examples_per_sec = float(duration) / cfg.TRAIN_BATCH_SIZE
-                    format_str = 'Epoch {} step {},  train loss = {} ( {} examples/sec; {} ''sec/batch)'
-                    print(format_str.format(epoch, global_step_value, train_loss, examples_per_sec, duration))
+                    # duration = time.time() - start_time
+                    # examples_per_sec = float(duration) / cfg.TRAIN_BATCH_SIZE
+                    # format_str = 'Epoch {} step {},  train loss = {} ( {} examples/sec; {} ''sec/batch)'
+                    # print(format_str.format(epoch, global_step_value, train_loss, examples_per_sec, duration))
                     train_writer.add_summary(summary_value, global_step=global_step_value)
                     train_losses.append(train_loss)
             except tf.errors.OutOfRangeError:
@@ -109,6 +109,8 @@ def train():
                     global_step=epoch
                 )
                 train_losses.clear()
+
+            print('Epoch:', epoch)
 
             # Test phrase
             # sess.run(test_init)

@@ -367,7 +367,7 @@ class Yolov3:
 
             # Darknet raw box to calculate loss
             raw_true_xy = y_true[l][..., :2] * grid_shapes[l][::-1] - grid
-            raw_true_wh = tf.log(y_true[l][..., 2:4] / self.anchors[anchor_mask[l]] * input_shape[::-1])
+            raw_true_wh = tf.log(y_true[l][..., 2:4] / self.anchors[anchor_mask[l]] * input_shape[::-1] + 1e-20)
             raw_true_wh = tf.where(object_mask_concat, raw_true_wh, tf.zeros_like(raw_true_wh))
             box_loss_scale = 2 - y_true[l][..., 2:3] * y_true[l][..., 3:4]
 

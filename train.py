@@ -10,6 +10,16 @@ from metric import cal_AP
 
 
 def train():
+    
+    print('input shape:', cfg.INPUT_SHAPE)
+    print('learning rate:', cfg.LEARNING_RATE)
+    print('dataset dir:', cfg.DATASET_DIR)
+    print('max boxes:', cfg.MAX_BOXES)
+    print('pre train:', cfg.PRE_TRAIN)
+    print('weight decay:', cfg.WEIGHT_DECAY)
+    print('anchors:', cfg.ANCHORS)
+    
+    
     # logs_dir = cfg.LOG_DIR + datetime.datetime.now().strftime("%YY%mm%dd%HH%MM%SS")
     logs_dir = cfg.LOG_DIR
 

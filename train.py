@@ -17,13 +17,13 @@ def train():
     grid_shapes = [input_shape // 32, input_shape // 16, input_shape // 8]
 
     train_dir = os.path.join(cfg.DATASET_DIR, 'train')
-    test_dir = os.path.join(cfg.DATASET_DIR, 'val')
+    # test_dir = os.path.join(cfg.DATASET_DIR, 'val')
     train_tfrecord_files = [os.path.join(train_dir, x) for x in os.listdir(train_dir)]
-    test_tfrecord_files = [os.path.join(test_dir, x) for x in os.listdir(test_dir)]
+    # test_tfrecord_files = [os.path.join(test_dir, x) for x in os.listdir(test_dir)]
 
     data_reader = DataReader(cfg.INPUT_SHAPE, cfg.ANCHORS, cfg.NUM_CLASSES, cfg.MAX_BOXES)
     train_dataset = data_reader.build_dataset(train_tfrecord_files, is_training=True, batch_size=cfg.TRAIN_BATCH_SIZE)
-    test_dataset = data_reader.build_dataset(test_tfrecord_files, is_training=False, batch_size=cfg.TEST_BATCH_SIZE)
+    # test_dataset = data_reader.build_dataset(test_tfrecord_files, is_training=False, batch_size=cfg.TEST_BATCH_SIZE)
     # print(train_dataset.output_shapes)
     iterator = tf.data.Iterator. \
         from_structure(output_types=train_dataset.output_types,
@@ -35,7 +35,7 @@ def train():
                            tf.TensorShape([None, grid_shapes[2][0], grid_shapes[2][1], 3, 5 + cfg.NUM_CLASSES])
                        ))
     train_init = iterator.make_initializer(train_dataset)
-    test_init = iterator.make_initializer(test_dataset)
+    # test_init = iterator.make_initializer(test_dataset)
     is_training = tf.placeholder(tf.bool, shape=[])
 
     images, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
@@ -84,12 +84,13 @@ def train():
             print('Load darknet 52 weights')
             sess.run(load_ops)
         train_writer = tf.summary.FileWriter(os.path.join(logs_dir, 'training'), sess.graph)
-        test_writer = tf.summary.FileWriter(os.path.join(logs_dir, 'testing'), sess.graph)
+        # test_writer = tf.summary.FileWriter(os.path.join(logs_dir, 'testing'), sess.graph)
 
         global_step_value = 0
         for epoch in range(cfg.N_EPOCHS):
             # Train phrase
             sess.run(train_init)
+            train_loss = 0
             try:
                 while True:
                     start_time = time.time()
@@ -103,50 +104,55 @@ def train():
             except tf.errors.OutOfRangeError:
                 pass
 
-            # Test phrase
-            sess.run(test_init)
-            test_losses = []
-            try:
-                while True:
-                    test_loss = sess.run(loss, {is_training: False})
-                    test_losses.append(test_loss)
-            except tf.errors.OutOfRangeError:
-                pass
-
-            test_loss = np.mean(test_losses)
-            format_str = 'Epoch {} step {}, test loss = {}'
-            print(format_str.format(epoch, global_step_value, test_loss))
-            test_writer.add_summary(
-                summary=tf.Summary(value=[tf.Summary.Value(tag='loss', simple_value=test_loss)]),
-                global_step=global_step_value
+            train_writer.add_summary(
+                summary=tf.Summary(value=[tf.Summary.Value(tag='loss_per_epoch', simple_value=train_loss)]),
+                global_step=epoch
             )
 
+            # Test phrase
+            # sess.run(test_init)
+            # test_losses = []
+            # try:
+            #     while True:
+            #         test_loss = sess.run(loss, {is_training: False})
+            #         test_losses.append(test_loss)
+            # except tf.errors.OutOfRangeError:
+            #     pass
+            #
+            # test_loss = np.mean(test_losses)
+            # format_str = 'Epoch {} step {}, test loss = {}'
+            # print(format_str.format(epoch, global_step_value, test_loss))
+            # test_writer.add_summary(
+            #     summary=tf.Summary(value=[tf.Summary.Value(tag='loss', simple_value=test_loss)]),
+            #     global_step=global_step_value
+            # )
+
             # Calculate mAP
-            if epoch % 5 == 0:
-                print("Calculate mAP on test set")
-                predict_ = []
-                grouth_truth_ = []
-                sess.run(test_init)
-                try:
-                    while True:
-                        out_predict_box, out_bbox = sess.run([predict_box, bbox], {is_training: False})
-                        predict_.append(out_predict_box)
-                        grouth_truth_.append(out_bbox)
-                except tf.errors.OutOfRangeError:
-                    pass
-                grouth_truth_ = np.concatenate(grouth_truth_, axis=0)
-                predict_ = np.concatenate(predict_, axis=0)
-                AP = cal_AP(predict_, grouth_truth_, cfg.NUM_CLASSES, 0.5)
-                mAP = np.mean(AP)
-                test_writer.add_summary(
-                    summary=tf.Summary(value=[tf.Summary.Value(tag='mAP', simple_value=mAP)]),
-                    global_step=epoch
-                )
-                print('AP', AP, 'mAP:', mAP)
-                del grouth_truth_
-                del predict_
-                del AP
-                del mAP
+            # if epoch % 5 == 0:
+            #     print("Calculate mAP on test set")
+            #     predict_ = []
+            #     grouth_truth_ = []
+            #     sess.run(test_init)
+            #     try:
+            #         while True:
+            #             out_predict_box, out_bbox = sess.run([predict_box, bbox], {is_training: False})
+            #             predict_.append(out_predict_box)
+            #             grouth_truth_.append(out_bbox)
+            #     except tf.errors.OutOfRangeError:
+            #         pass
+            #     grouth_truth_ = np.concatenate(grouth_truth_, axis=0)
+            #     predict_ = np.concatenate(predict_, axis=0)
+            #     AP = cal_AP(predict_, grouth_truth_, cfg.NUM_CLASSES, 0.5)
+            #     mAP = np.mean(AP)
+            #     test_writer.add_summary(
+            #         summary=tf.Summary(value=[tf.Summary.Value(tag='mAP', simple_value=mAP)]),
+            #         global_step=epoch
+            #     )
+            #     print('AP', AP, 'mAP:', mAP)
+            #     del grouth_truth_
+            #     del predict_
+            #     del AP
+            #     del mAP
 
             if epoch % 10 == 0:
                 checkpoint_path = os.path.join(cfg.CHECKPOINT_DIR, 'model.ckpt-{}'.format(epoch))

@@ -94,7 +94,7 @@ def train():
         train_writer = tf.summary.FileWriter(os.path.join(logs_dir, 'training'), sess.graph)
         test_writer = tf.summary.FileWriter(os.path.join(logs_dir, 'testing'), sess.graph)
 
-        # global_step_value = 0
+        global_step_value = 0
         for epoch in range(cfg.N_EPOCHS):
             # Train phrase
             sess.run(train_init)
@@ -131,8 +131,9 @@ def train():
                 pass
 
             test_loss = np.mean(test_losses)
-            format_str = 'Epoch {} step {}, test loss = {}'
-            print(format_str.format(epoch, global_step_value, test_loss))
+            # format_str = 'Epoch {} step {}, test loss = {}'
+            # print(format_str.format(epoch, global_step_value, test_loss))
+            print('Epoch', epoch, 'loss', test_loss)
             test_writer.add_summary(
                 summary=tf.Summary(value=[tf.Summary.Value(tag='loss', simple_value=test_loss)]),
                 global_step=global_step_value

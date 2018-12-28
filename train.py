@@ -10,7 +10,6 @@ from metric import cal_AP
 
 
 def train():
-    
     print('input shape:', cfg.INPUT_SHAPE)
     print('learning rate:', cfg.LEARNING_RATE)
     print('dataset dir:', cfg.DATASET_DIR)
@@ -18,8 +17,7 @@ def train():
     print('pre train:', cfg.PRE_TRAIN)
     print('weight decay:', cfg.WEIGHT_DECAY)
     print('anchors:', cfg.ANCHORS)
-    
-    
+
     # logs_dir = cfg.LOG_DIR + datetime.datetime.now().strftime("%YY%mm%dd%HH%MM%SS")
     logs_dir = cfg.LOG_DIR
 
@@ -123,22 +121,22 @@ def train():
             print('Epoch:', epoch)
 
             # Test phrase
-            # sess.run(test_init)
-            # test_losses = []
-            # try:
-            #     while True:
-            #         test_loss = sess.run(loss, {is_training: False})
-            #         test_losses.append(test_loss)
-            # except tf.errors.OutOfRangeError:
-            #     pass
-            #
-            # test_loss = np.mean(test_losses)
-            # format_str = 'Epoch {} step {}, test loss = {}'
-            # print(format_str.format(epoch, global_step_value, test_loss))
-            # test_writer.add_summary(
-            #     summary=tf.Summary(value=[tf.Summary.Value(tag='loss', simple_value=test_loss)]),
-            #     global_step=global_step_value
-            # )
+            sess.run(test_init)
+            test_losses = []
+            try:
+                while True:
+                    test_loss = sess.run(loss, {is_training: False})
+                    test_losses.append(test_loss)
+            except tf.errors.OutOfRangeError:
+                pass
+
+            test_loss = np.mean(test_losses)
+            format_str = 'Epoch {} step {}, test loss = {}'
+            print(format_str.format(epoch, global_step_value, test_loss))
+            test_writer.add_summary(
+                summary=tf.Summary(value=[tf.Summary.Value(tag='loss', simple_value=test_loss)]),
+                global_step=global_step_value
+            )
 
             # Calculate mAP
             if epoch % 5 == 0:

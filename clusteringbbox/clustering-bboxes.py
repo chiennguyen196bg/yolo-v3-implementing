@@ -11,28 +11,15 @@ CLUSTERS = 9
 
 def load_dataset():
     dataset_bboxes = []
-    # for xml_file in glob.glob("{}/*xml".format(path)):
-    # 	tree = ET.parse(xml_file)
-    #
-    # 	height = int(tree.findtext("./size/height"))
-    # 	width = int(tree.findtext("./size/width"))
-    #
-    # 	for obj in tree.iter("object"):
-    # 		xmin = int(obj.findtext("bndbox/xmin")) / width
-    # 		ymin = int(obj.findtext("bndbox/ymin")) / height
-    # 		xmax = int(obj.findtext("bndbox/xmax")) / width
-    # 		ymax = int(obj.findtext("bndbox/ymax")) / height
-    #
-    # 		dataset.append([xmax - xmin, ymax - ymin])
 
     TRAINING_DATASET_DIR = "../dataset/MOT17Det/train/train"
-    # VALIDATING_DATASET_DIR = "../dataset/MOT17Det/train/val"
+    VALIDATING_DATASET_DIR = "../dataset/MOT17Det/train/test"
 
     train_tfrecord_files = [os.path.join(TRAINING_DATASET_DIR, x) for x in os.listdir(TRAINING_DATASET_DIR)]
-    # validating_tfrecord_files = [os.path.join(VALIDATING_DATASET_DIR, x) for x in os.listdir(VALIDATING_DATASET_DIR)]
+    validating_tfrecord_files = [os.path.join(VALIDATING_DATASET_DIR, x) for x in os.listdir(VALIDATING_DATASET_DIR)]
 
     reader = DataReader(cfg.INPUT_SHAPE, cfg.ANCHORS, 1, max_boxes=60)
-    dataset = reader.build_dataset(train_tfrecord_files, is_training=False, batch_size=6)
+    dataset = reader.build_dataset(train_tfrecord_files + validating_tfrecord_files, is_training=False, batch_size=6)
     iterator = dataset.make_one_shot_iterator()
     image, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
 

@@ -148,7 +148,7 @@ class DataReader:
 
 
 if __name__ == '__main__':
-    DATASET_DIR = "dataset/MOT17Det/train/train"
+    DATASET_DIR = "dataset/MOT17Det/train/test"
     tfrecord_files = [os.path.join(DATASET_DIR, x) for x in os.listdir(DATASET_DIR)]
     reader = DataReader((416, 416), cfg.ANCHORS, 1, max_boxes=60)
     dataset = reader.build_dataset(tfrecord_files, is_training=False, batch_size=6)

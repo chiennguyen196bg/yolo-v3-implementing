@@ -10,6 +10,14 @@ from metric import cal_AP
 
 
 def train():
+    print('input shape:', cfg.INPUT_SHAPE)
+    print('learning rate:', cfg.LEARNING_RATE)
+    print('dataset dir:', cfg.DATASET_DIR)
+    print('max boxes:', cfg.MAX_BOXES)
+    print('pre train:', cfg.PRE_TRAIN)
+    print('weight decay:', cfg.WEIGHT_DECAY)
+    print('anchors:', cfg.ANCHORS)
+
     # logs_dir = cfg.LOG_DIR + datetime.datetime.now().strftime("%YY%mm%dd%HH%MM%SS")
     logs_dir = cfg.LOG_DIR
 
@@ -17,7 +25,7 @@ def train():
     grid_shapes = [input_shape // 32, input_shape // 16, input_shape // 8]
 
     train_dir = os.path.join(cfg.DATASET_DIR, 'train')
-    test_dir = os.path.join(cfg.DATASET_DIR, 'val')
+    test_dir = os.path.join(cfg.DATASET_DIR, 'test')
     train_tfrecord_files = [os.path.join(train_dir, x) for x in os.listdir(train_dir)]
     test_tfrecord_files = [os.path.join(test_dir, x) for x in os.listdir(test_dir)]
 
@@ -28,7 +36,7 @@ def train():
     iterator = tf.data.Iterator. \
         from_structure(output_types=train_dataset.output_types,
                        output_shapes=(
-                           tf.TensorShape([None, cfg.INPUT_SHAPE[0], cfg.INPUT_SHAPE[1], 3]),
+                           tf.TensorShape([None, cfg.INPUT_SHAPE[1], cfg.INPUT_SHAPE[0], 3]),
                            tf.TensorShape([None, cfg.MAX_BOXES, 5]),
                            tf.TensorShape([None, grid_shapes[0][0], grid_shapes[0][1], 3, 5 + cfg.NUM_CLASSES]),
                            tf.TensorShape([None, grid_shapes[1][0], grid_shapes[1][1], 3, 5 + cfg.NUM_CLASSES]),
@@ -41,10 +49,10 @@ def train():
     images, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
     bbox_true = [bbox_true_13, bbox_true_26, bbox_true_52]
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, cfg.NUM_CLASSES)
-    output = model.yolo_inference(images, is_training, weight_decay=0.0)
+    output = model.yolo_inference(images, is_training, weight_decay=cfg.WEIGHT_DECAY)
     loss = model.yolo_loss(output, bbox_true, ignore_thresh=0.5)
-    # l2_loss = tf.losses.get_regularization_loss()
-    # loss += l2_loss
+    l2_loss = tf.losses.get_regularization_loss()
+    loss += l2_loss
     tf.summary.scalar('loss', loss)
     list_vars = list(tf.global_variables())
 
@@ -90,18 +98,27 @@ def train():
         for epoch in range(cfg.N_EPOCHS):
             # Train phrase
             sess.run(train_init)
+            train_losses = []
             try:
                 while True:
-                    start_time = time.time()
+                    # start_time = time.time()
                     train_loss, summary_value, global_step_value, _ = sess.run(
                         [loss, merged_summary, global_step, train_op], {is_training: True})
-                    duration = time.time() - start_time
-                    examples_per_sec = float(duration) / cfg.TRAIN_BATCH_SIZE
-                    format_str = 'Epoch {} step {},  train loss = {} ( {} examples/sec; {} ''sec/batch)'
-                    print(format_str.format(epoch, global_step_value, train_loss, examples_per_sec, duration))
+                    # duration = time.time() - start_time
+                    # examples_per_sec = float(duration) / cfg.TRAIN_BATCH_SIZE
+                    # format_str = 'Epoch {} step {},  train loss = {} ( {} examples/sec; {} ''sec/batch)'
+                    # print(format_str.format(epoch, global_step_value, train_loss, examples_per_sec, duration))
                     train_writer.add_summary(summary_value, global_step=global_step_value)
+                    train_losses.append(train_loss)
             except tf.errors.OutOfRangeError:
-                pass
+                train_writer.add_summary(
+                    summary=tf.Summary(
+                        value=[tf.Summary.Value(tag='loss_per_epoch', simple_value=np.mean(train_losses))]),
+                    global_step=epoch
+                )
+                train_losses.clear()
+
+            print('Epoch:', epoch)
 
             # Test phrase
             sess.run(test_init)
@@ -114,15 +131,16 @@ def train():
                 pass
 
             test_loss = np.mean(test_losses)
-            format_str = 'Epoch {} step {}, test loss = {}'
-            print(format_str.format(epoch, global_step_value, test_loss))
+            # format_str = 'Epoch {} step {}, test loss = {}'
+            # print(format_str.format(epoch, global_step_value, test_loss))
+            print('Epoch', epoch, 'loss', test_loss)
             test_writer.add_summary(
                 summary=tf.Summary(value=[tf.Summary.Value(tag='loss', simple_value=test_loss)]),
                 global_step=global_step_value
             )
 
             # Calculate mAP
-            if epoch % 10 == 0:
+            if epoch % 5 == 0:
                 print("Calculate mAP on test set")
                 predict_ = []
                 grouth_truth_ = []
@@ -148,7 +166,7 @@ def train():
                 del AP
                 del mAP
 
-            if epoch % 10 == 0:
+            if epoch % 5 == 0:
                 checkpoint_path = os.path.join(cfg.CHECKPOINT_DIR, 'model.ckpt-{}'.format(epoch))
                 saver.save(sess, checkpoint_path)
 

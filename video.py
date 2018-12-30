@@ -7,7 +7,7 @@ from yolov3.util import letterbox_image_opencv
 
 
 def detect(video_path, class_names, model_path, out_video_path='out'):
-    input_image = tf.placeholder(dtype=tf.float32, shape=[None, cfg.INPUT_SHAPE[0], cfg.INPUT_SHAPE[1], 3])
+    input_image = tf.placeholder(dtype=tf.float32, shape=[None, cfg.INPUT_SHAPE[1], cfg.INPUT_SHAPE[0], 3])
     input_image_shape = tf.placeholder(dtype=tf.int32, shape=(None, 2))
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, len(class_names))
     yolo_outputs = model.yolo_inference(input_image, is_training=False)

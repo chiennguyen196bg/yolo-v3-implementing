@@ -3,6 +3,7 @@ import numpy as np
 from yolov3.detector import Detector
 from tracking.tracker import Tracker
 import tensorflow as tf
+import time
 
 
 def track():
@@ -26,6 +27,7 @@ def track():
 
         while cap.isOpened():
             ret, image = cap.read()
+            start_time = time.time()
             detection_boxes = detector.predict(image)
             tracker.update(detection_boxes)
 
@@ -37,7 +39,7 @@ def track():
                 color = (int(color[0]), int(color[1]), int(color[2]))
                 image = cv2.rectangle(image, (xmin, ymin), (xmax, ymax), color=color, thickness=3)
 
-            label = "{}: {}".format(class_names[0], tracker.track_id_count)
+            label = "{}: {}, fps: {}".format(class_names[0], tracker.num_track_is_tracked, int(1/(time.time() - start_time)))
             # print(label)
             cv2.putText(image, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 3)
             # print(tracker.track_id_count)

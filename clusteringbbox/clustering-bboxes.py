@@ -1,0 +1,54 @@
+import os
+import tensorflow as tf
+from yolov3 import config as cfg
+import numpy as np
+
+from clusteringbbox.kmeans import kmeans, avg_iou
+from data_loader import DataReader
+
+CLUSTERS = 9
+
+
+def load_dataset():
+    dataset_bboxes = []
+
+    TRAINING_DATASET_DIR = "../dataset/MOT17Det/train/train"
+    VALIDATING_DATASET_DIR = "../dataset/MOT17Det/train/test"
+
+    train_tfrecord_files = [os.path.join(TRAINING_DATASET_DIR, x) for x in os.listdir(TRAINING_DATASET_DIR)]
+    validating_tfrecord_files = [os.path.join(VALIDATING_DATASET_DIR, x) for x in os.listdir(VALIDATING_DATASET_DIR)]
+
+    reader = DataReader(cfg.INPUT_SHAPE, cfg.ANCHORS, 1, max_boxes=60)
+    dataset = reader.build_dataset(train_tfrecord_files + validating_tfrecord_files, is_training=False, batch_size=6)
+    iterator = dataset.make_one_shot_iterator()
+    image, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
+
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        try:
+            while True:
+                bbox_out = sess.run(bbox)
+                for boxes_in_an_image in bbox_out:
+                    boxes_in_an_image = boxes_in_an_image[boxes_in_an_image[..., 3] > 0]
+                    for b in boxes_in_an_image:
+                        xmin, ymin, xmax, ymax = b[0:4]
+                        if xmax - xmin == 0 or ymax - ymin == 0:
+                            print(xmin, ymin, xmax, ymax)
+                            continue
+                        dataset_bboxes.append([xmax - xmin, ymax - ymin])
+        except tf.errors.OutOfRangeError:
+            pass
+
+    return np.array(dataset_bboxes)
+
+
+if __name__ == '__main__':
+    print('Reading dataset')
+    data = load_dataset()
+    print('Clustering')
+    out = kmeans(data, k=CLUSTERS)
+    print("Accuracy: {:.2f}%".format(avg_iou(data, out) * 100))
+    print("Boxes:\n {}".format(np.round(out)))
+
+    ratios = np.around(out[:, 0] / out[:, 1], decimals=2).tolist()
+    print("Ratios:\n {}".format(sorted(ratios)))

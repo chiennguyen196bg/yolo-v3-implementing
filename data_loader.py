@@ -8,7 +8,7 @@ import matplotlib.patches as patches
 
 class DataReader:
     def __init__(self, input_shape, anchors, num_classes, max_boxes=20):
-        self.input_shape = np.array(input_shape, np.int32)
+        self.input_shape = np.array(input_shape, np.int32)[::-1] # in this class, input_shape = (h, w)
         self.anchors = np.array(anchors, np.float32).reshape(-1, 2)
         self.num_classes = num_classes
         self.input_shape_tensor = tf.constant(self.input_shape)
@@ -77,7 +77,7 @@ class DataReader:
         """resize image to input shape"""
         image_width, image_height = tf.cast(tf.shape(image)[1], tf.float32), tf.cast(tf.shape(image)[0], tf.float32)
         input_shape = tf.cast(self.input_shape_tensor, tf.float32)
-        input_height, input_width = input_shape[1], input_shape[0]
+        input_height, input_width = input_shape[0], input_shape[1]
         scale = tf.minimum(input_width / image_width, input_height / image_height)
         new_height = image_height * scale
         new_width = image_width * scale
@@ -150,7 +150,7 @@ class DataReader:
 if __name__ == '__main__':
     DATASET_DIR = "dataset/MOT17Det/train/test"
     tfrecord_files = [os.path.join(DATASET_DIR, x) for x in os.listdir(DATASET_DIR)]
-    reader = DataReader((416, 416), cfg.ANCHORS, 1, max_boxes=60)
+    reader = DataReader(cfg.INPUT_SHAPE, cfg.ANCHORS, 1, max_boxes=60)
     dataset = reader.build_dataset(tfrecord_files, is_training=False, batch_size=6)
     iterator = dataset.make_one_shot_iterator()
     image, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()

@@ -36,7 +36,7 @@ def train():
     iterator = tf.data.Iterator. \
         from_structure(output_types=train_dataset.output_types,
                        output_shapes=(
-                           tf.TensorShape([None, cfg.INPUT_SHAPE[0], cfg.INPUT_SHAPE[1], 3]),
+                           tf.TensorShape([None, cfg.INPUT_SHAPE[1], cfg.INPUT_SHAPE[0], 3]),
                            tf.TensorShape([None, cfg.MAX_BOXES, 5]),
                            tf.TensorShape([None, grid_shapes[0][0], grid_shapes[0][1], 3, 5 + cfg.NUM_CLASSES]),
                            tf.TensorShape([None, grid_shapes[1][0], grid_shapes[1][1], 3, 5 + cfg.NUM_CLASSES]),

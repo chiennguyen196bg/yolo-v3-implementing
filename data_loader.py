@@ -77,7 +77,7 @@ class DataReader:
         """resize image to input shape"""
         image_width, image_height = tf.cast(tf.shape(image)[1], tf.float32), tf.cast(tf.shape(image)[0], tf.float32)
         input_shape = tf.cast(self.input_shape_tensor, tf.float32)
-        input_height, input_width = input_shape[0], input_shape[1]
+        input_height, input_width = input_shape[1], input_shape[0]
         scale = tf.minimum(input_width / image_width, input_height / image_height)
         new_height = image_height * scale
         new_width = image_width * scale

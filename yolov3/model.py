@@ -146,8 +146,8 @@ def _yolo_block(inputs, filters, num_anchors, num_classes):
 def _upsample(inputs, out_shape):
     # tf.image.resize_nearest_neighbor accepts input in format NHWC
 
-    new_height = out_shape[2]
-    new_width = out_shape[1]
+    new_height = out_shape[1]
+    new_width = out_shape[2]
 
     inputs = tf.image.resize_nearest_neighbor(inputs, (new_height, new_width))
 

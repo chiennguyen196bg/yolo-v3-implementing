@@ -21,8 +21,8 @@ def train():
     # logs_dir = cfg.LOG_DIR + datetime.datetime.now().strftime("%YY%mm%dd%HH%MM%SS")
     logs_dir = cfg.LOG_DIR
 
-    input_shape = np.array(cfg.INPUT_SHAPE, dtype=np.int32)
-    grid_shapes = [input_shape // 32, input_shape // 16, input_shape // 8]
+    input_shape_hw = np.array(cfg.INPUT_SHAPE, dtype=np.int32)[::-1]
+    grid_shapes = [input_shape_hw // 32, input_shape_hw // 16, input_shape_hw // 8]
 
     train_dir = os.path.join(cfg.DATASET_DIR, 'train')
     test_dir = os.path.join(cfg.DATASET_DIR, 'test')
@@ -73,7 +73,7 @@ def train():
     init_variables = tf.global_variables_initializer()
     saver = tf.train.Saver(var_list=list_vars)
 
-    predict_box = model.yolo_predict(output, image_shape=input_shape, max_boxes=cfg.MAX_BOXES, score_threshold=0.3)
+    predict_box = model.yolo_predict(output, image_shape=input_shape_hw, max_boxes=cfg.MAX_BOXES, score_threshold=0.3)
 
     with tf.Session(config=tf.ConfigProto(log_device_placement=False)) as sess:
         # sess.run(init_variables)

@@ -3,12 +3,12 @@ BATCH_NORM_DECAY = 0.9
 BATCH_NORM_EPSILON = 1e-05
 LEAKY_RELU = 0.1
 
-ANCHORS = [(4, 11), (5, 15), (10, 11), (7, 21), (10, 24), (11, 36), (16, 45), (22, 59), (47, 137)]
+ANCHORS = [(6, 16), (12, 10), (19, 13), (12, 28), (28, 16), (43, 23), (26, 54), (64, 36), (101, 60)]
 
 INPUT_SHAPE = [416, 416]
 NUM_CLASSES = 4
 
-DATASET_DIR = "dataset/MOT17Det"
+DATASET_DIR = "dataset/KITTI"
 
 LOG_DIR = './logs'
 

@@ -25,7 +25,7 @@ def train():
     grid_shapes = [input_shape_hw // 32, input_shape_hw // 16, input_shape_hw // 8]
 
     train_dir = os.path.join(cfg.DATASET_DIR, 'train')
-    test_dir = os.path.join(cfg.DATASET_DIR, 'test')
+    test_dir = os.path.join(cfg.DATASET_DIR, 'val')
     train_tfrecord_files = [os.path.join(train_dir, x) for x in os.listdir(train_dir)]
     test_tfrecord_files = [os.path.join(test_dir, x) for x in os.listdir(test_dir)]
 

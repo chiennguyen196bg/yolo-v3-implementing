@@ -148,10 +148,10 @@ class DataReader:
 
 
 if __name__ == '__main__':
-    DATASET_DIR = "dataset/MOT17Det/train/test"
+    DATASET_DIR = "dataset/KITTI/train"
     tfrecord_files = [os.path.join(DATASET_DIR, x) for x in os.listdir(DATASET_DIR)]
-    reader = DataReader(cfg.INPUT_SHAPE, cfg.ANCHORS, 1, max_boxes=60)
-    dataset = reader.build_dataset(tfrecord_files, is_training=False, batch_size=6)
+    reader = DataReader((608, 320), cfg.ANCHORS, 4, max_boxes=60)
+    dataset = reader.build_dataset(tfrecord_files, is_training=False, batch_size=8)
     iterator = dataset.make_one_shot_iterator()
     image, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
     fig, ax = plt.subplots(1)
@@ -161,7 +161,7 @@ if __name__ == '__main__':
             while True:
                 images_out, bbox_out, bbox_true_13_out, bbox_true_26_out, bbox_true_52_out = sess.run(
                     [image, bbox, bbox_true_13, bbox_true_26, bbox_true_52])
-                m = 2
+                m = 7
                 sample_image = images_out[m]
                 ax.imshow(sample_image)
                 sample_bboxes = bbox_out[m]

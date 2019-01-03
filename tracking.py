@@ -15,7 +15,7 @@ def track():
 
         detector = Detector('./checkpoint/model.ckpt-30', len(class_names), sess=sess)
 
-        tracker = Tracker(0.3, 10, 10)
+        tracker = Tracker(0.3, 1, 10)
 
         rand_colors = np.random.randint(0, 255, (100, 3), dtype=np.uint)
 
@@ -39,11 +39,11 @@ def track():
                 color = (int(color[0]), int(color[1]), int(color[2]))
                 image = cv2.rectangle(image, (xmin, ymin), (xmax, ymax), color=color, thickness=3)
 
-            label = "{}: {}, fps: {}".format(class_names[0], tracker.num_track_is_tracked, int(1/(time.time() - start_time)))
+            # label = "{}: {}, fps: {}".format(class_names[0], tracker.num_track_is_tracked, int(1/(time.time() - start_time)))
             # print(label)
-            cv2.putText(image, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 3)
+            # cv2.putText(image, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 3)
             # print(tracker.track_id_count)
-            cv2.imshow('image', image)
+            # cv2.imshow('image', image)
             out.write(image)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break

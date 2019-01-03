@@ -135,8 +135,8 @@ def train():
             # print(format_str.format(epoch, global_step_value, test_loss))
             print('Epoch', epoch, 'loss', test_loss)
             test_writer.add_summary(
-                summary=tf.Summary(value=[tf.Summary.Value(tag='loss', simple_value=test_loss)]),
-                global_step=global_step_value
+                summary=tf.Summary(value=[tf.Summary.Value(tag='loss_per_epoch', simple_value=test_loss)]),
+                global_step=epoch
             )
 
             # Calculate mAP

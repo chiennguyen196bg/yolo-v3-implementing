@@ -4,27 +4,28 @@ import tensorflow as tf
 from yolov3.util import letterbox_image, load_weights
 from yolov3 import config as cfg
 from yolov3.model import Yolov3
+import argparse
 
 
-def detect(image_path, class_names, model_path, yolo_weights=None):
+def detect(image_path, input_shape, class_names, model_path, output):
     image = Image.open(image_path)
-    resize_image = letterbox_image(image, cfg.INPUT_SHAPE)
+    resize_image = letterbox_image(image, input_shape)
     image_data = np.array(resize_image, dtype=np.float32)
     image_data /= 255.
     image_data = np.expand_dims(image_data, axis=0)
     input_image_shape = tf.placeholder(dtype=tf.int32, shape=(None, 2))
-    input_image = tf.placeholder(shape=[None, 416, 416, 3], dtype=tf.float32)
+    input_image = tf.placeholder(shape=[None, input_shape[1], input_shape[0], 3], dtype=tf.float32)
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, len(class_names))
     yolo_outputs = model.yolo_inference(input_image, is_training=False)
     result_bbox = model.yolo_predict(yolo_outputs, input_image_shape, score_threshold=.5)
     with tf.Session() as sess:
         # sess.run(tf.global_variables_initializer())
-        if yolo_weights is not None:
-            load_op = load_weights(tf.global_variables(), weights_file=yolo_weights)
-            sess.run(load_op)
-        else:
-            saver = tf.train.Saver()
-            saver.restore(sess, model_path)
+        # if yolo_weights is not None:
+        #     load_op = load_weights(tf.global_variables(), weights_file=yolo_weights)
+        #     sess.run(load_op)
+        # else:
+        saver = tf.train.Saver()
+        saver.restore(sess, model_path)
         out_result_bbox = sess.run(
             result_bbox,
             feed_dict={
@@ -72,15 +73,21 @@ def detect(image_path, class_names, model_path, yolo_weights=None):
             draw.text(tuple(text_origin), label, fill=(0, 0, 0), font=font)
             del draw
         image.show()
-        image.save('./result1.jpg')
+        image.save(output)
 
 
 # (66, 134, 244)
 
 if __name__ == '__main__':
-    with open('./model-data/coco_classes.txt', 'r') as f:
-        lines = f.readlines()
-        class_names = list(x.strip() for x in lines)
-    # print(len(class_names))
-    # detect('./800px-People_at_Confluence_Park-2.jpg', class_names, model_path=None, yolo_weights='./model-data/yolov3.weights')
-    detect('./100.png', ['nfpa'], model_path='./checkpoint/model.ckpt-180', yolo_weights=None)
+    parser = argparse.ArgumentParser(description='Detecting for image')
+    parser.add_argument('-i', '--image-path', default='',
+                        help='link to the image')
+    parser.add_argument('-s', '--input-shape', nargs=2, type=int)
+    parser.add_argument('-cn', '--class-names', nargs='+', type=str,
+                        help='list class names, car,pedestrain,van')
+    parser.add_argument('-cp', '--checkpoint', default='./checkpoint',
+                        help='checkpoint of model')
+    parser.add_argument('-o', '--output-path', default='./result.jpg',
+                        help='output image')
+    args = parser.parse_args()
+    detect(args.image_path, args.input_shape, args.class_names, args.checkpoint, args.output_path)

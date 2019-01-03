@@ -6,12 +6,13 @@ from yolov3.model import Yolov3
 
 
 class Detector(object):
-    def __init__(self, model_path, num_classes, score_threshold=0.5, sess=None):
+    def __init__(self, model_path, input_shape, num_classes, score_threshold=0.5, sess=None):
         self.model_path = model_path
         if sess is None:
             sess = tf.Session()
         self.sess = sess
-        self.input_image = tf.placeholder(dtype=tf.float32, shape=[None, cfg.INPUT_SHAPE[0], cfg.INPUT_SHAPE[1], 3])
+        self.input_shape = input_shape
+        self.input_image = tf.placeholder(dtype=tf.float32, shape=[None, input_shape[1], input_shape[0], 3])
         self.input_image_shape = tf.placeholder(dtype=tf.int32, shape=(None, 2))
         model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, num_classes)
         yolo_outputs = model.yolo_inference(self.input_image, is_training=False)
@@ -22,7 +23,7 @@ class Detector(object):
 
     def predict(self, image):
         image_shape = image.shape[0:2]
-        resized_image = letterbox_image_opencv(image, cfg.INPUT_SHAPE)
+        resized_image = letterbox_image_opencv(image, self.input_shape)
         image_data = resized_image / 255.
         image_data = np.expand_dims(image_data, axis=0)
         predict_boxes = self.sess.run(self.predict_boxes,

@@ -4,16 +4,17 @@ from yolov3.detector import Detector
 from tracking.tracker import Tracker
 import tensorflow as tf
 import time
+import argparse
 
 
-def track():
-    class_names = ['coconut']
+def track(input_path, input_shape, class_names, model_path, output):
+
     cap, sess, out = None, None, None
     try:
-        cap = cv2.VideoCapture('./data/IMG_6992.m4v')
+        cap = cv2.VideoCapture(input_path)
         sess = tf.Session()
 
-        detector = Detector('./checkpoint/model.ckpt-30', len(class_names), sess=sess)
+        detector = Detector(model_path, input_shape, len(class_names), sess=sess)
 
         tracker = Tracker(0.3, 1, 10)
 
@@ -22,7 +23,7 @@ def track():
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = cap.get(cv2.CAP_PROP_FPS)
-        out = cv2.VideoWriter('./data/out-tracking.avi', cv2.VideoWriter_fourcc(*'XVID'), fps,
+        out = cv2.VideoWriter(output, cv2.VideoWriter_fourcc(*'XVID'), fps,
                               (frame_width, frame_height))
 
         while cap.isOpened():
@@ -37,7 +38,7 @@ def track():
                 xmin, ymin, xmax, ymax = bbox.reshape((4,)).astype(int)
                 color = rand_colors[trk.track_id % 100]
                 color = (int(color[0]), int(color[1]), int(color[2]))
-                image = cv2.rectangle(image, (xmin, ymin), (xmax, ymax), color=color, thickness=3)
+                image = cv2.rectangle(image, (xmin, ymin), (xmax, ymax), color=color, thickness=2)
 
             # label = "{}: {}, fps: {}".format(class_names[0], tracker.num_track_is_tracked, int(1/(time.time() - start_time)))
             # print(label)
@@ -58,4 +59,15 @@ def track():
 
 
 if __name__ == '__main__':
-    track()
+    parser = argparse.ArgumentParser(description='Detecting for image')
+    parser.add_argument('-i', '--video-path', default='',
+                        help='link to the image')
+    parser.add_argument('-s', '--input-shape', nargs=2, type=int)
+    parser.add_argument('-cn', '--class-names', nargs='+', type=str,
+                        help='list class names: car,pedestrain,van')
+    parser.add_argument('-cp', '--checkpoint', default='./checkpoint',
+                        help='checkpoint of model')
+    parser.add_argument('-o', '--output', default='./result.mp4',
+                        help='output video')
+    args = parser.parse_args()
+    track(args.video_path, args.input_shape, args.class_names, args.checkpoint, args.output)

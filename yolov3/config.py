@@ -5,8 +5,8 @@ LEAKY_RELU = 0.1
 
 ANCHORS = [(6, 16), (12, 10), (19, 13), (12, 28), (28, 16), (43, 23), (26, 54), (64, 36), (101, 60)]
 
-INPUT_SHAPE = [416, 416]
-NUM_CLASSES = 4
+INPUT_SHAPE = [736, 224]
+NUM_CLASSES = 8
 
 DATASET_DIR = "dataset/KITTI"
 
@@ -14,7 +14,7 @@ LOG_DIR = './logs'
 
 CHECKPOINT_DIR = './checkpoint'
 
-MAX_BOXES = 52
+MAX_BOXES = 22
 LEARNING_RATE = 0.001
 
 PRE_TRAIN = True

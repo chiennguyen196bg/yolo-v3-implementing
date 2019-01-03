@@ -150,7 +150,7 @@ class DataReader:
 if __name__ == '__main__':
     DATASET_DIR = "dataset/KITTI/train"
     tfrecord_files = [os.path.join(DATASET_DIR, x) for x in os.listdir(DATASET_DIR)]
-    reader = DataReader((608, 320), cfg.ANCHORS, 4, max_boxes=60)
+    reader = DataReader((736, 224), cfg.ANCHORS, 8, max_boxes=60)
     dataset = reader.build_dataset(tfrecord_files, is_training=False, batch_size=8)
     iterator = dataset.make_one_shot_iterator()
     image, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()

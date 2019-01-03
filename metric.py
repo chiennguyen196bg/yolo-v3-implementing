@@ -116,6 +116,11 @@ def cal_AP(predict, ground_truth, num_classes, iou_threshold):
         class_predict_box_result = class_predict_box_result[class_predict_box_result[:, 1].argsort()[::-1]]
         # print(class_predict_box_result)
         num_class_ground_truth_boxes = len(all_ground_truth_boxes[all_ground_truth_boxes[:, 4] == c])
+
+        if num_class_ground_truth_boxes == 0:
+            AP_total[c] = 0.0
+            continue
+
         acc_tp = 0
         acc_fp = 0
         precision = []

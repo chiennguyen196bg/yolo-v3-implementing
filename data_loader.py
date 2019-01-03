@@ -172,6 +172,8 @@ if __name__ == '__main__':
 
                 for bbox in sample_bboxes:
                     xmin, ymin, xmax, ymax = bbox[0:4]
+                    if xmax - xmin == 0 or ymax - ymin == 0:
+                        print(xmin, ymin, xmax, ymax)
 
                     rect = patches.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, linewidth=1, edgecolor='r',
                                              facecolor='none')

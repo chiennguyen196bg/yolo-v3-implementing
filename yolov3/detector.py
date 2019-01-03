@@ -6,7 +6,7 @@ from yolov3.model import Yolov3
 
 
 class Detector(object):
-    def __init__(self, model_path, input_shape, num_classes, score_threshold=0.5, sess=None):
+    def __init__(self, model_path, input_shape, num_classes, score_threshold=0.6, sess=None):
         self.model_path = model_path
         if sess is None:
             sess = tf.Session()
@@ -16,7 +16,8 @@ class Detector(object):
         self.input_image_shape = tf.placeholder(dtype=tf.int32, shape=(None, 2))
         model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, num_classes)
         yolo_outputs = model.yolo_inference(self.input_image, is_training=False)
-        self.predict_boxes = model.yolo_predict(yolo_outputs, self.input_image_shape, score_threshold=score_threshold)
+        self.predict_boxes = model.yolo_predict(yolo_outputs, self.input_image_shape, score_threshold=score_threshold,
+                                                iou_threshold=0.5)
 
         saver = tf.train.Saver()
         saver.restore(self.sess, model_path)

@@ -388,12 +388,15 @@ class Yolov3:
             ignore_mask = ignore_mask.stack()
             ignore_mask = tf.expand_dims(ignore_mask, -1)  # shape=(m, grid_h, grid_w, num_anchor, 1)
 
-            xy_loss = object_mask * box_loss_scale * tf.nn.sigmoid_cross_entropy_with_logits(labels=raw_true_xy,
-                                                                                             logits=raw_pred[..., 0:2])
-            wh_loss = object_mask * box_loss_scale * 0.5 * tf.square(raw_true_wh - raw_pred[..., 2:4])
+            crood_lambda = 5.0
+            noobj_lambda = 0.5
+
+            xy_loss = crood_lambda * object_mask * box_loss_scale * \
+                      tf.nn.sigmoid_cross_entropy_with_logits(labels=raw_true_xy, logits=raw_pred[..., 0:2])
+            wh_loss = crood_lambda * object_mask * box_loss_scale * 0.5 * tf.square(raw_true_wh - raw_pred[..., 2:4])
             confidence_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(labels=object_mask,
                                                                                     logits=raw_pred[..., 4:5]) + \
-                              (1 - object_mask) * \
+                              (1 - object_mask) * noobj_lambda * \
                               tf.nn.sigmoid_cross_entropy_with_logits(labels=object_mask,
                                                                       logits=raw_pred[..., 4:5]) * ignore_mask
 
@@ -471,4 +474,3 @@ class Yolov3:
         ymin, xmin, ymax, xmax, confidence, class_id = tf.split(predict_boxes, num_or_size_splits=6, axis=-1)
         predict_boxes = tf.concat([xmin, ymin, xmax, ymax, confidence, class_id], axis=-1)
         return predict_boxes
-

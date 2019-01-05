@@ -161,7 +161,7 @@ if __name__ == '__main__':
             while True:
                 images_out, bbox_out, bbox_true_13_out, bbox_true_26_out, bbox_true_52_out = sess.run(
                     [image, bbox, bbox_true_13, bbox_true_26, bbox_true_52])
-                m = 7
+                m = 0
                 sample_image = images_out[m]
                 ax.imshow(sample_image)
                 sample_bboxes = bbox_out[m]

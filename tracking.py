@@ -29,9 +29,9 @@ def track(input_path, input_shape, class_names, model_path, output):
             ret, image = cap.read()
             start_time = time.time()
             detection_boxes = detector.predict(image)
-            tracker.update(detection_boxes)
+            matched_trks = tracker.update(detection_boxes)
 
-            for trk in tracker.tracks:
+            for trk in matched_trks:
                 bbox = trk.get_state()
                 # print(bbox)
                 xmin, ymin, xmax, ymax = bbox.reshape((4,)).astype(int)

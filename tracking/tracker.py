@@ -115,8 +115,11 @@ class Tracker(object):
 
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(detections, predictions,
                                                                                    self.iou_thresh)
+
+        matched_tracks = []
         for d, t in matched:
             self.tracks[t].update(detections[d])
+            matched_tracks.append(self.tracks[t])
 
         for t in unmatched_trks:
             self.tracks[t].update()
@@ -130,6 +133,8 @@ class Tracker(object):
         for t, trk in reversed(list(enumerate(self.tracks))):
             if trk.skipped_frames > self.max_frames_to_skip:
                 self.tracks.pop(t)
+
+        return matched_tracks
 
 
 # test

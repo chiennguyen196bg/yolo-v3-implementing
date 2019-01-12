@@ -52,7 +52,7 @@ def train():
     output = model.yolo_inference(images, is_training, weight_decay=cfg.WEIGHT_DECAY)
     loss = model.yolo_loss(output, bbox_true, ignore_thresh=0.5)
     l2_loss = tf.losses.get_regularization_loss()
-    loss += l2_loss
+    smooth_loss = loss + l2_loss
     tf.summary.scalar('loss', loss)
     list_vars = list(tf.global_variables())
 
@@ -67,9 +67,9 @@ def train():
     with tf.control_dependencies(update_ops):
         if cfg.PRE_TRAIN:
             train_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='yolo')
-            train_op = optimizer.minimize(loss=loss, global_step=global_step, var_list=train_vars)
+            train_op = optimizer.minimize(loss=smooth_loss, global_step=global_step, var_list=train_vars)
         else:
-            train_op = optimizer.minimize(loss=loss, global_step=global_step)
+            train_op = optimizer.minimize(loss=smooth_loss, global_step=global_step)
     init_variables = tf.global_variables_initializer()
     saver = tf.train.Saver(var_list=list_vars)
 
@@ -94,7 +94,7 @@ def train():
         train_writer = tf.summary.FileWriter(os.path.join(logs_dir, 'training'), sess.graph)
         test_writer = tf.summary.FileWriter(os.path.join(logs_dir, 'testing'), sess.graph)
 
-        global_step_value = 0
+        # global_step_value = 0
         for epoch in range(cfg.N_EPOCHS):
             # Train phrase
             sess.run(train_init)
@@ -111,9 +111,10 @@ def train():
                     train_writer.add_summary(summary_value, global_step=global_step_value)
                     train_losses.append(train_loss)
             except tf.errors.OutOfRangeError:
+                mean_train_loss = np.mean(train_losses)
                 train_writer.add_summary(
                     summary=tf.Summary(
-                        value=[tf.Summary.Value(tag='loss_per_epoch', simple_value=np.mean(train_losses))]),
+                        value=[tf.Summary.Value(tag='loss_per_epoch', simple_value=mean_train_loss)]),
                     global_step=epoch
                 )
                 train_losses.clear()
@@ -133,11 +134,12 @@ def train():
             test_loss = np.mean(test_losses)
             # format_str = 'Epoch {} step {}, test loss = {}'
             # print(format_str.format(epoch, global_step_value, test_loss))
-            print('Epoch', epoch, 'loss', test_loss)
             test_writer.add_summary(
                 summary=tf.Summary(value=[tf.Summary.Value(tag='loss_per_epoch', simple_value=test_loss)]),
                 global_step=epoch
             )
+
+            print('Epoch:', epoch, 'train loss:', mean_train_loss, 'test loss:', test_loss)
 
             # Calculate mAP
             if epoch % 5 == 0:

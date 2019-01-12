@@ -8,7 +8,6 @@ import argparse
 
 
 def track(input_path, input_shape, class_names, model_path, output):
-
     cap, sess, out = None, None, None
     try:
         cap = cv2.VideoCapture(input_path)
@@ -16,7 +15,7 @@ def track(input_path, input_shape, class_names, model_path, output):
 
         detector = Detector(model_path, input_shape, len(class_names), sess=sess)
 
-        tracker = Tracker(0.3, 1, 10)
+        tracker = Tracker(0.3, 10, 10)
 
         rand_colors = np.random.randint(0, 255, (100, 3), dtype=np.uint)
 
@@ -39,6 +38,8 @@ def track(input_path, input_shape, class_names, model_path, output):
                 color = rand_colors[trk.track_id % 100]
                 color = (int(color[0]), int(color[1]), int(color[2]))
                 image = cv2.rectangle(image, (xmin, ymin), (xmax, ymax), color=color, thickness=2)
+                image = cv2.putText(image, str(trk.track_id), (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0),
+                                    2)
 
             # label = "{}: {}, fps: {}".format(class_names[0], tracker.num_track_is_tracked, int(1/(time.time() - start_time)))
             # print(label)

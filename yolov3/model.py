@@ -391,9 +391,9 @@ class Yolov3:
             crood_lambda = 5.0
             noobj_lambda = 0.5
 
-            xy_loss = crood_lambda * object_mask * \
+            xy_loss = crood_lambda * object_mask * box_loss_scale * \
                       tf.nn.sigmoid_cross_entropy_with_logits(labels=raw_true_xy, logits=raw_pred[..., 0:2])
-            wh_loss = crood_lambda * object_mask * tf.square(raw_true_wh - raw_pred[..., 2:4])
+            wh_loss = crood_lambda * object_mask * box_loss_scale * tf.square(raw_true_wh - raw_pred[..., 2:4])
             confidence_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(labels=object_mask,
                                                                                     logits=raw_pred[..., 4:5]) + \
                               (1 - object_mask) * noobj_lambda * \

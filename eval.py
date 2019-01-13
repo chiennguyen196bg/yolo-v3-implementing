@@ -29,7 +29,6 @@ def eval(test_dir, checkpoint, iou_threshold):
                            tf.TensorShape([None, grid_shapes[2][0], grid_shapes[2][1], 3, 5 + cfg.NUM_CLASSES])
                        ))
     test_init = iterator.make_initializer(test_dataset)
-    test_init = iterator.make_initializer(test_dataset)
 
     images, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
     model = Yolov3(cfg.BATCH_NORM_DECAY, cfg.BATCH_NORM_EPSILON, cfg.LEAKY_RELU, cfg.ANCHORS, cfg.NUM_CLASSES)

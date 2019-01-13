@@ -24,9 +24,9 @@ def eval(test_dir, checkpoint_dir, iou_threshold):
                        output_shapes=(
                            tf.TensorShape([None, cfg.INPUT_SHAPE[1], cfg.INPUT_SHAPE[0], 3]),
                            tf.TensorShape([None, cfg.MAX_BOXES, 5]),
-                           tf.TensorShape([None, grid_shapes[0][0], grid_shapes[0][1], 3, 5 + cfg.NUM_CLASSES]),
-                           tf.TensorShape([None, grid_shapes[1][0], grid_shapes[1][1], 3, 5 + cfg.NUM_CLASSES]),
-                           tf.TensorShape([None, grid_shapes[2][0], grid_shapes[2][1], 3, 5 + cfg.NUM_CLASSES])
+                           tf.TensorShape([None, grid_shapes[0][1], grid_shapes[0][0], 3, 5 + cfg.NUM_CLASSES]),
+                           tf.TensorShape([None, grid_shapes[1][1], grid_shapes[1][0], 3, 5 + cfg.NUM_CLASSES]),
+                           tf.TensorShape([None, grid_shapes[2][1], grid_shapes[2][0], 3, 5 + cfg.NUM_CLASSES])
                        ))
     test_init = iterator.make_initializer(test_dataset)
 

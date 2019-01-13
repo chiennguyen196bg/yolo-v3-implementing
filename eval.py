@@ -10,7 +10,7 @@ from metric import cal_AP
 import argparse
 
 
-def eval(test_dir, checkpoint_dir, iou_threshold):
+def eval(test_dir, checkpoint, iou_threshold):
     input_shape = np.array(cfg.INPUT_SHAPE, dtype=np.int32)
     grid_shapes = [input_shape // 32, input_shape // 16, input_shape // 8]
 
@@ -41,13 +41,15 @@ def eval(test_dir, checkpoint_dir, iou_threshold):
     with tf.Session(config=tf.ConfigProto(log_device_placement=False)) as sess:
         # sess.run(init_variables)
         # load model if have a checkpoint
-        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
-        if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
-            print('Restore model', ckpt.model_checkpoint_path)
-            saver.restore(sess, ckpt.model_checkpoint_path)
-        else:
-            print('Did not find a checkpoint. Initialize weights')
-            raise Exception('Checkpoint was invalid')
+        # ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+        # if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
+        #     print('Restore model', ckpt.model_checkpoint_path)
+        #     saver.restore(sess, ckpt.model_checkpoint_path)
+        # else:
+        #     print('Did not find a checkpoint. Initialize weights')
+        #     raise Exception('Checkpoint was invalid')
+
+        saver.restore(sess, checkpoint)
 
         # Calculate mAP
         print("Calculate mAP on test set")

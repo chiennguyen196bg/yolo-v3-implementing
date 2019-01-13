@@ -7,6 +7,7 @@ import time
 from yolov3.model import Yolov3
 from yolov3.util import load_weights
 from metric import cal_AP
+import argparse
 
 
 def eval(test_dir, checkpoint_dir, iou_threshold):
@@ -68,4 +69,11 @@ def eval(test_dir, checkpoint_dir, iou_threshold):
 
 
 if __name__ == '__main__':
-    eval(cfg.DATASET_DIR, cfg.CHECKPOINT_DIR, 0.5)
+    parser = argparse.ArgumentParser(description='Detecting for image')
+    parser.add_argument('-ds', '--dataset', default='',
+                        help='link to the image')
+    parser.add_argument('-cp', '--checkpoint', default='./checkpoint',
+                        help='checkpoint of model')
+    parser.add_argument('-iou', '--threshold', type=float, default=0.5)
+    args = parser.parse_args()
+    eval(args.dataset, args.checkpoint, args.threshold)

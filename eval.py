@@ -11,8 +11,8 @@ import argparse
 
 
 def eval(test_dir, checkpoint, iou_threshold):
-    input_shape = np.array(cfg.INPUT_SHAPE, dtype=np.int32)
-    grid_shapes = [input_shape // 32, input_shape // 16, input_shape // 8]
+    input_shape_hw = np.array(cfg.INPUT_SHAPE, dtype=np.int32)[::-1]
+    grid_shapes = [input_shape_hw // 32, input_shape_hw // 16, input_shape_hw // 8]
 
     test_tfrecord_files = [os.path.join(test_dir, x) for x in os.listdir(test_dir)]
 
@@ -24,10 +24,11 @@ def eval(test_dir, checkpoint, iou_threshold):
                        output_shapes=(
                            tf.TensorShape([None, cfg.INPUT_SHAPE[1], cfg.INPUT_SHAPE[0], 3]),
                            tf.TensorShape([None, cfg.MAX_BOXES, 5]),
-                           tf.TensorShape([None, grid_shapes[0][1], grid_shapes[0][0], 3, 5 + cfg.NUM_CLASSES]),
-                           tf.TensorShape([None, grid_shapes[1][1], grid_shapes[1][0], 3, 5 + cfg.NUM_CLASSES]),
-                           tf.TensorShape([None, grid_shapes[2][1], grid_shapes[2][0], 3, 5 + cfg.NUM_CLASSES])
+                           tf.TensorShape([None, grid_shapes[0][0], grid_shapes[0][1], 3, 5 + cfg.NUM_CLASSES]),
+                           tf.TensorShape([None, grid_shapes[1][0], grid_shapes[1][1], 3, 5 + cfg.NUM_CLASSES]),
+                           tf.TensorShape([None, grid_shapes[2][0], grid_shapes[2][1], 3, 5 + cfg.NUM_CLASSES])
                        ))
+    test_init = iterator.make_initializer(test_dataset)
     test_init = iterator.make_initializer(test_dataset)
 
     images, bbox, bbox_true_13, bbox_true_26, bbox_true_52 = iterator.get_next()
@@ -36,23 +37,13 @@ def eval(test_dir, checkpoint, iou_threshold):
 
     saver = tf.train.Saver()
 
-    predict_box = model.yolo_predict(output, image_shape=input_shape, max_boxes=cfg.MAX_BOXES, score_threshold=0.3)
+    predict_box = model.yolo_predict(output, image_shape=input_shape_hw, max_boxes=cfg.MAX_BOXES, score_threshold=0.3)
 
     with tf.Session(config=tf.ConfigProto(log_device_placement=False)) as sess:
-        # sess.run(init_variables)
-        # load model if have a checkpoint
-        # ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
-        # if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
-        #     print('Restore model', ckpt.model_checkpoint_path)
-        #     saver.restore(sess, ckpt.model_checkpoint_path)
-        # else:
-        #     print('Did not find a checkpoint. Initialize weights')
-        #     raise Exception('Checkpoint was invalid')
 
         saver.restore(sess, checkpoint)
 
         # Calculate mAP
-        print("Calculate mAP on test set")
         predict_ = []
         grouth_truth_ = []
         sess.run(test_init)

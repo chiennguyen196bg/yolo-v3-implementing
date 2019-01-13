@@ -7,6 +7,7 @@ import time
 from yolov3.model import Yolov3
 from yolov3.util import load_weights
 from metric import cal_AP
+import argparse
 
 
 def eval(test_dir, checkpoint_dir, iou_threshold):
@@ -23,9 +24,9 @@ def eval(test_dir, checkpoint_dir, iou_threshold):
                        output_shapes=(
                            tf.TensorShape([None, cfg.INPUT_SHAPE[1], cfg.INPUT_SHAPE[0], 3]),
                            tf.TensorShape([None, cfg.MAX_BOXES, 5]),
-                           tf.TensorShape([None, grid_shapes[0][0], grid_shapes[0][1], 3, 5 + cfg.NUM_CLASSES]),
-                           tf.TensorShape([None, grid_shapes[1][0], grid_shapes[1][1], 3, 5 + cfg.NUM_CLASSES]),
-                           tf.TensorShape([None, grid_shapes[2][0], grid_shapes[2][1], 3, 5 + cfg.NUM_CLASSES])
+                           tf.TensorShape([None, grid_shapes[0][1], grid_shapes[0][0], 3, 5 + cfg.NUM_CLASSES]),
+                           tf.TensorShape([None, grid_shapes[1][1], grid_shapes[1][0], 3, 5 + cfg.NUM_CLASSES]),
+                           tf.TensorShape([None, grid_shapes[2][1], grid_shapes[2][0], 3, 5 + cfg.NUM_CLASSES])
                        ))
     test_init = iterator.make_initializer(test_dataset)
 
@@ -68,4 +69,11 @@ def eval(test_dir, checkpoint_dir, iou_threshold):
 
 
 if __name__ == '__main__':
-    eval(cfg.DATASET_DIR, cfg.CHECKPOINT_DIR, 0.5)
+    parser = argparse.ArgumentParser(description='Detecting for image')
+    parser.add_argument('-ds', '--dataset', default='',
+                        help='link to the image')
+    parser.add_argument('-cp', '--checkpoint', default='./checkpoint',
+                        help='checkpoint of model')
+    parser.add_argument('-iou', '--threshold', type=float, default=0.5)
+    args = parser.parse_args()
+    eval(args.dataset, args.checkpoint, args.threshold)

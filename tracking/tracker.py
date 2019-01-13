@@ -108,15 +108,15 @@ class Tracker(object):
     def update(self, detections):
         # Must have to call this to predict next state of each tracks
         predictions = np.array([trk.predict() for trk in self.tracks]).reshape(-1, 4)
+        matched_tracks = []
         if len(detections) == 0:
             for trk in self.tracks:
                 trk.update()
-            return
+            return matched_tracks
 
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(detections, predictions,
                                                                                    self.iou_thresh)
 
-        matched_tracks = []
         for d, t in matched:
             self.tracks[t].update(detections[d])
             matched_tracks.append(self.tracks[t])
